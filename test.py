@@ -56,7 +56,7 @@ def AI():
     if user_input := st.chat_input("Enter your question:"):
         st.session_state.messages.append(HumanMessage(content=user_input))
         with st.spinner("ChatGPT is typing ..."):
-            response = llm(st.session_state.messages)
+            response = llm.invoke(st.session_state.messages)
         st.session_state.messages.append(AIMessage(content=response.content))
 
     messages = st.session_state.get('messages', [])
@@ -67,13 +67,16 @@ def AI():
             st.markdown(f"**You:** {message.content}")
 
 def condition():
-    #date = st.date_input("Pick a date")
+    # 国を入力させるフィールドを追加
+    country = st.text_input('行きたい国', '日本')  # デフォルトを「日本」に設定
     days = st.slider('宿泊日数', 1, 14, 1)
     people = st.radio('人数', ['1人', '2人', '3人', '4人', 'それ以上'])
     traffic = st.radio('交通', ["飛行機", "船", "新幹線", "タクシー", "レンタカー", "自家用車"])
     cost = st.sidebar.number_input("予算（円）", min_value=1000, max_value=100000000, value=10000, step=1000)
+
     if st.button("検索する"):
-        sentence = f"滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。"
+        # 入力された国を検索条件に追加
+        sentence = f"行きたい国は{country}, 滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。"
         question(sentence)
 
 def question(sentence):
@@ -83,7 +86,7 @@ def question(sentence):
     
     st.session_state.messages.append(HumanMessage(content=sentence))
     with st.spinner("ChatGPT is typing ..."):
-        response = llm(st.session_state.messages)
+        response = llm.invoke(st.session_state.messages)
     st.session_state.messages.append(AIMessage(content=response.content))
 
     for message in st.session_state.messages:
