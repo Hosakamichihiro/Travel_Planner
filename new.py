@@ -1,147 +1,134 @@
 import streamlit as st
-from langchain_openai import ChatOpenAI
-from langchain.schema import (SystemMessage, HumanMessage, AIMessage)
-import pandas as pd
+from streamlit_chat import message
+from langchain.chat_models import ChatOpenAI
+from langchain.schema import (
+    SystemMessage,
+    HumanMessage,
+    AIMessage
+)
+from langchain.callbacks import get_openai_callback
 
-flag = False 
-sentence = "aaa"
-def main():
-    llm = ChatOpenAI(temperature=0)
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
+
+def init_page():
     st.set_page_config(
-        page_title="Trip Planner",
-        page_icon="🧳"
+        page_title="Website Summarizer",
+        page_icon="🤗"
     )
-    st.header("Trip Planner")
-    st.text("・This site was developed to help you make the most of your vacation.")
-    st.text("・First, enter the conditions you are interested in,such as your destination, gourmet food, tourist spots, etc.")
-    
-    # Sidebarの選択肢を定義する
-    options = ["START","MAP", "MEMO", "EXIT"]
-    choice = st.sidebar.selectbox("Select an option", options)
-    # Mainコンテンツの表示を変える
-    if choice == "START":
-        st.write("You selected START")
-        AI()
-        condition()
-    elif choice == "MAP":
-        st.write("You selected MEMO")
-        MAP()
-
-    elif choice == "MEMO":
-        st.write("You selected MEMO")
-        AI()
-        
-    else:
-        st.write("You selected EXIT")
-        redirect()
-    
+    st.header("Website Summarizer 🤗")
+    st.sidebar.title("Options")
 
 
-def redirect():
-    st.markdown("""
-        <meta http-equiv="refresh" content="0; url=https://www.google.com">
-        <p>リダイレクトしています...</p>
-    """, unsafe_allow_html=True)
-
-def MAP():
-    # 緯度と経度を設定
-    latitude = 55 # 例として東京駅の緯度
-    longitude = -3 # 例として東京駅の経度
-
-    # 緯度と経度から地図用のデータフレームを作成
-    data = pd.DataFrame({
-        'lat': [latitude],
-        'lon': [longitude]
-    })
-    st.map(data)
-# 地図を表示
-
-def AI():
-    # ユーザーの入力を監視
-    llm = ChatOpenAI(temperature=0)
-
-# チャット履歴の初期化
-    if "messages" not in st.session_state:
+def init_messages():
+    clear_button = st.sidebar.button("Clear Conversation", key="clear")
+    if clear_button or "messages" not in st.session_state:
         st.session_state.messages = [
-            SystemMessage(content="You are a trip plannner.You should provide great trip plan.")
-      ]
-
-    if user_input := st.chat_input("聞きたいことを入力して下さい"):
-        st.session_state.messages.append(HumanMessage(content=user_input))
-        with st.spinner("ChatGPT is typing ..."):
-            response = llm(st.session_state.messages)
-        st.session_state.messages.append(AIMessage(content=response.content))
-
-    # チャット履歴の表示
-    messages = st.session_state.get('messages', [])
-    for message in messages:
-        if isinstance(message, AIMessage):
-            with st.chat_message('assistant'):
-                st.markdown(message.content)
-        elif isinstance(message, HumanMessage):
-            with st.chat_message('user'):
-                st.markdown(message.content)
-        else:  # isinstance(message, SystemMessage):
-            st.write(f"System message: {message.content}")
-    #st.image("c:/Users/junakimichi/Pictures/Saved Picture/IMG_0356.JPG", use_column_width=True)
+            SystemMessage(content="You are a helpful assistant.")
+        ]
+        st.session_state.costs = []
 
 
-def condition():
-    global flag,sentence
-    days = st.slider('宿泊日数', 1, 14, 1) # min, max, default
-    people = st.radio(
-        '人数', 
-        ['1人', '2人', '3人',"4人","それ以上"]
-    )
-    traffic = st.radio(
-        "交通",
-        ["飛行機","船","新幹線","タクシー","レンタカー","自家用車"]
-    )
-    cost = st.radio(
-        "予算",
-        ["e","f","g","h"]    
-    )
-    if st.button("検索する"):
-        question()
-        st.session_state["days"]=days
-        st.session_state["people"]=people
-        st.session_state["traffic"]=traffic
-        st.session_state["cost"]=cost
-        flag = True
-        sentence =  ("滞在日数は",days,"日,",
-                              "人数は",people,"人,","予算は",cost,"円,",
-                              "交通機関は",traffic,"の旅行プランを計画してください")
-def question():
-    global flag, sentence
-    if flag == True:
-        llm = ChatOpenAI(temperature=0)
-        
-        user_input = sentence
-        print(user_input)
-        st.write("この条件で検索しています・・・")
-        
-        st.session_state.messages.append(HumanMessage(content=user_input))
-        with st.spinner("ChatGPT is typing ..."):
-            response = llm(st.session_state.messages)
-        st.session_state.messages.append(AIMessage(content=response.content))
+def select_model():
+    model = st.sidebar.radio("Choose a model:", ("GPT-3.5", "GPT-4"))
+    if model == "GPT-3.5":
+        model_name = "gpt-3.5-turbo"
+    else:
+        model_name = "gpt-4"
 
-    # ここで `messages` を取得
-        messages = st.session_state.get('messages', [])
+    return ChatOpenAI(temperature=0, model_name=model_name)
 
-        # メッセージのループ処理
-        for message in messages:
-            if isinstance(message, AIMessage):
-                with st.chat_message('assistant'):
-                    st.markdown(message.content)
-            elif isinstance(message, HumanMessage):
-                with st.chat_message('user'):
-                    st.markdown(message.content)
-            #else:  # SystemMessage の場合
-                #st.write(f"System message: {message.content}")
 
-    # フラグをリセット
-    flag = False
+def get_url_input():
+    url = st.text_input("URL: ", key="input")
+    return url
+
+
+def validate_url(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
+
+
+def get_content(url):
+    try:
+        with st.spinner("Fetching Content ..."):
+            response = requests.get(url)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            # fetch text from main (change the below code to filter page)
+            if soup.main:
+                return soup.main.get_text()
+            elif soup.article:
+                return soup.article.get_text()
+            else:
+                return soup.body.get_text()
+    except:
+        st.write('something wrong')
+        return None
+
+
+def build_prompt(content, n_chars=300):
+    return f"""以下はとある。Webページのコンテンツである。内容を{n_chars}程度でわかりやすく要約してください。
+
+========
+
+{content[:1000]}
+
+========
+
+日本語で書いてね！
+"""
+
+
+def get_answer(llm, messages):
+    with get_openai_callback() as cb:
+        answer = llm(messages)
+    return answer.content, cb.total_cost
+
+
+def main():
+    init_page()
+
+    llm = select_model()
+    init_messages()
+
+    container = st.container()
+    response_container = st.container()
+
+    with container:
+        url = get_url_input()
+        is_valid_url = validate_url(url)
+        if not is_valid_url:
+            st.write('Please input valid url')
+            answer = None
+        else:
+            content = get_content(url)
+            if content:
+                prompt = build_prompt(content)
+                st.session_state.messages.append(HumanMessage(content=prompt))
+                with st.spinner("ChatGPT is typing ..."):
+                    answer, cost = get_answer(llm, st.session_state.messages)
+                st.session_state.costs.append(cost)
+            else:
+                answer = None
+
+    if answer:
+        with response_container:
+            st.markdown("## Summary")
+            st.write(answer)
+            st.markdown("---")
+            st.markdown("## Original Text")
+            st.write(content)
+
+    costs = st.session_state.get('costs', [])
+    st.sidebar.markdown("## Costs")
+    st.sidebar.markdown(f"**Total cost: ${sum(costs):.5f}**")
+    for cost in costs:
+        st.sidebar.markdown(f"- ${cost:.5f}")
+
 if __name__ == '__main__':
     main()
-    
