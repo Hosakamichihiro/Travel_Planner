@@ -68,7 +68,9 @@ def AI():
 
 def condition():
     # 国を入力させるフィールドを追加
-    country = st.text_input('行きたい国', '日本')  # デフォルトを「日本」に設定
+    todofuken = ["北海道地方","東北地方","関東地方","中部地方","近畿地方","中国地方","四国地方","九州地方","沖縄県"]
+    region = st.selectbox("出発地",todofuken)
+    #country = st.text_input('行きたい国', '日本')  # デフォルトを「日本」に設定
     days = st.slider('宿泊日数', 1, 14, 1)
     people = st.radio('人数', ['1人', '2人', '3人', '4人', 'それ以上'])
     traffic = st.radio('交通', ["飛行機", "船", "新幹線", "タクシー", "レンタカー", "自家用車"])
@@ -76,7 +78,7 @@ def condition():
 
     if st.button("検索する"):
         # 入力された国を検索条件に追加
-        sentence = f"行きたい国は{country}, 滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。"
+        sentence = f"行きたい地方は{region}, 滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。"
         question(sentence)
 
 def question(sentence):
