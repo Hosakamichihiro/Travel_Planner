@@ -15,7 +15,6 @@ def main():
     st.text("・This site was developed to help you make the most of your vacation.")
     st.text("・First, enter the conditions you are interested in,")
     st.text("    such as your destination, gourmet food, tourist spots, etc.")
-    st.image("Oirasekeiryu.JPG")
     # Sidebarの選択肢を定義する
     options = ["START","MAP", "MEMO", "EXIT"]
     choice = st.sidebar.selectbox("Select an option", options)
@@ -79,7 +78,7 @@ def condition():
     else:
         # 海外の州（または国）を選択
         states = ["アジア", "アフリカ", "ヨーロッパ", "北アメリカ", "南アメリカ", "オセアニア"]  # 例としていくつかの国を追加
-        region = st.radio("行きたい州", states)
+        region = st.radio("States I want to visit", states)
 
     # 他の条件
     date = st.date_input('出発日を選択')
