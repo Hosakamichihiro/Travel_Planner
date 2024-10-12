@@ -2,6 +2,7 @@ import streamlit as st
 from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import (SystemMessage, HumanMessage, AIMessage)
 import pandas as pd
+import datetime
 #master→main
 def main():
     llm = ChatOpenAI(temperature=0)
@@ -68,8 +69,10 @@ def AI():
 
 def condition():
     # 国を入力させるフィールドを追加
+    date = st.date_input('Select a date')
+    st.write(f'You selected: {date}')
     todofuken = ["北海道","東北地方","関東地方","中部地方","近畿地方","中国地方","四国地方","九州地方","沖縄県"]
-    region = st.selectbox("出発地",todofuken)
+    region = st.selectbox("目的地",todofuken)
     #country = st.text_input('行きたい国', '日本')  # デフォルトを「日本」に設定
     days = st.slider('宿泊日数', 1, 14, 1)
     people = st.radio('人数', ['1人', '2人', '3人', '4人', 'それ以上'])
@@ -94,8 +97,8 @@ def question(sentence):
     for message in st.session_state.messages:
         if isinstance(message, AIMessage):
             st.markdown(f"**Assistant:** {message.content}")
-        elif isinstance(message, HumanMessage):
-            st.markdown(f"**You:** {message.content}")
+        #elif isinstance(message, HumanMessage):
+            #st.markdown(f"**You:** {message.content}")
 
 
 if __name__ == '__main__':
