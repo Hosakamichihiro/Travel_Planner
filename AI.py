@@ -3,6 +3,7 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import (SystemMessage, HumanMessage, AIMessage)
 import pandas as pd
 import datetime
+import pydeck as pdk
 #master→main
 def main():
     llm = ChatOpenAI(temperature=0)
@@ -40,11 +41,40 @@ def redirect():
     """, unsafe_allow_html=True)
 
 def MAP():
-    # 緯度と経度を設定
-    latitude = 55
-    longitude = -3
-    #data = pd.DataFrame({'lat': [latitude], 'lon': [longitude]})
-    st.map()
+    # 初期マップの表示設定
+    view_state = pdk.ViewState(
+        latitude=35.6804,  # 初期表示する緯度
+        longitude=139.7690,  # 初期表示する経度
+        zoom=10,  # ズームレベル
+        pitch=50
+    )
+
+    # マップのレイヤー設定（何も表示しないベースマップ）
+    layer = pdk.Layer(
+        "ScatterplotLayer",  # シンプルなマップ表示
+        data=[],  # 初期データなし
+        get_position='[lon, lat]',  # 緯度経度を設定するフィールド
+        get_color='[200, 30, 0, 160]',
+        get_radius=200,
+    )
+
+    # Pydeckマップを表示
+    map = pdk.Deck(
+        map_style="mapbox://styles/mapbox/light-v9",
+        initial_view_state=view_state,
+        layers=[layer],
+        tooltip={"text": "Click on the map to get the coordinates!"}
+    )
+
+    # Pydeckでマップを表示
+    map_output = st.pydeck_chart(map)
+
+    # 地図上のクリックイベントを処理するためのインタラクション
+    if st.button("クリックした場所の緯度経度を取得"):
+        # 現在の地図の状態を取得して、クリックした座標を取得（仮のロジック）
+        # Note: Streamlit自体で直接クリック位置を取得する機能はないため、Pydeckの拡張や外部ツールが必要
+        st.write("緯度経度を取得しました！(ダミー値: 緯度 35.6804, 経度 139.7690)")  # 仮の値を表示
+
 
 def AI():
     llm = ChatOpenAI(temperature=0)
