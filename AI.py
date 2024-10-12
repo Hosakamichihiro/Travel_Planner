@@ -35,7 +35,7 @@ def main():
 
 def redirect():
     st.markdown("""
-        <meta http-equiv="refresh" content="0; url=https://www.google.com">
+        <meta http-equiv="refresh" content="0; url=https://www.google.com/">
         <p>Redirecting...</p>
     """, unsafe_allow_html=True)
 
