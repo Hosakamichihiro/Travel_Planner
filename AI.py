@@ -42,8 +42,8 @@ def MAP():
     # 緯度と経度を設定
     latitude = 55
     longitude = -3
-    data = pd.DataFrame({'lat': [latitude], 'lon': [longitude]})
-    st.map(data)
+    #data = pd.DataFrame({'lat': [latitude], 'lon': [longitude]})
+    st.map()
 
 def AI():
     llm = ChatOpenAI(temperature=0)
