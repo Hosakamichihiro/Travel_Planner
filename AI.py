@@ -15,6 +15,7 @@ def main():
     st.text("・This site was developed to help you make the most of your vacation.")
     st.text("・First, enter the conditions you are interested in,")
     st.text("    such as your destination, gourmet food, tourist spots, etc.")
+    st.image("Oirasekeiryu.JPG")
     # Sidebarの選択肢を定義する
     options = ["START","MAP", "MEMO", "EXIT"]
     choice = st.sidebar.selectbox("Select an option", options)
