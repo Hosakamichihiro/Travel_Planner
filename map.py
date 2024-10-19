@@ -68,7 +68,7 @@ def main():
 
     st.write("explanation:", lang_dict[lang]) #キーを指定して、説明を取り出します。
     
-    st.image("hakonetozantetsudo.jpg", width=300)
+    
 
 if __name__ == '__main__':
   main()
