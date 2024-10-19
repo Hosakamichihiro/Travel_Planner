@@ -8,7 +8,7 @@ import folium
 
 def main():
     # タイトル。最もサイズが大きい。ページタイトル向け
-    st.title('Map   ')
+    st.title('Map')
     # ヘッダ。２番目に大きい。項目名向け
     st.header('Streamlit')
 
