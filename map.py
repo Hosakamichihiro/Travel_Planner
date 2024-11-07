@@ -13,7 +13,7 @@ def main():
     st.header('Streamlit')
 
     m = folium.Map(
-        location=[35.17081269026154, 137.0339428258054],
+        location=[35, 135],
         zoom_start=16,
         attr='Folium map'
     )
