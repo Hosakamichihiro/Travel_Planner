@@ -4,7 +4,9 @@ from langchain.schema import (SystemMessage, HumanMessage, AIMessage)
 import pandas as pd
 import datetime
 import pydeck as pdk
-#master→main
+
+
+
 def main():
     llm = ChatOpenAI(temperature=0)
 
@@ -44,7 +46,7 @@ def MAP():
     # 初期マップの表示設定
     view_state = pdk.ViewState(
         latitude=35.6804,  # 初期表示する緯度
-        longitude=139.7690,  # 初期表示する経度
+        longitude=135.7690,  # 初期表示する経度
         zoom=10,  # ズームレベル
         pitch=50
     )
@@ -112,14 +114,15 @@ def condition():
 
     # 他の条件
     date = st.date_input('出発日を選択')
-    days = st.slider('宿泊日数', 1, 14, 1)
+    days = st.slider('滞在日数', 1, 14, 1)
+    time = st.time_input("出発時間を入力", value=None)
     people = st.radio('人数', ['1人', '2人', '3人', '4人', 'それ以上'])
     traffic = st.radio('交通', ["飛行機", "船", "新幹線", "タクシー", "レンタカー", "自家用車"])
     cost = st.sidebar.number_input("予算（円）", min_value=1000, max_value=100000000, value=10000, step=1000)
 
     if st.button("検索する"):
         # 入力された情報を検索条件に追加
-        sentence = f"{destination_type}旅行を計画しています。出発日は、{date}行きたい場所は{region}, 滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを作成してください。"
+        sentence = f"{destination_type}旅行を計画しています。出発日は、{date}出発時間は{time},行きたい場所は{region}, 滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを作成してください。"
         question(sentence)
 
 def question(sentence):
