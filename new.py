@@ -5,7 +5,7 @@ import pandas as pd
 from  streamlit_folium import st_folium
 import folium
 from langchain_community.tools import DuckDuckGoSearchRun
-
+from duckduckgo_search import DDGS
 
 def main():
     llm = ChatOpenAI(temperature=0)
@@ -18,15 +18,20 @@ def main():
     st.text("・This site was developed to help you make the most of your vacation.")
     st.text("・First, enter the conditions you are interested in,")
     st.text("    such as your destination, gourmet food, tourist spots, etc.")
-    web()
+    
     # Sidebarの選択肢を定義する
-    options = ["START","MAP", "MEMO", "EXIT"]
+    options = ["START","WEB","MAP", "MEMO", "EXIT"]
     choice = st.sidebar.selectbox("Select an option", options)
 
     if choice == "START":
         st.write("You selected START")
+        web()
         AI()
         condition()
+    elif choice == "WEB":
+        st.write("You selected WEB")
+        AI()
+        condition_web()
     elif choice == "MAP":
         st.write("You selected MAP")
         MAP()
@@ -45,7 +50,7 @@ def redirect():
 #35.68123360506802, 139.76695041934764
 def MAP():
     m = folium.Map(
-        location=[35.17081269026154, 137.0339428258054],
+        location=[35.68123782435746, 139.7669852797953],
         zoom_start=16,
         attr='Folium map'
     )
@@ -136,6 +141,29 @@ def condition():
         sentence = f"{destination_type}旅行を計画しています。行きたい場所は{region},滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。"
         question(sentence)
 
+def condition_web():
+    # 国を入力させるフィールドを追加
+    # 国内か海外か選択
+    destination_type = st.radio("国内旅行か海外旅行か選んでください", ['国内', '海外'])
+
+    if destination_type == '国内':
+        # 国内の地方を選択
+        todofuken = ["北海道", "東北地方", "関東地方", "中部地方", "近畿地方", "中国地方", "四国地方", "九州地方", "沖縄県"]
+        region = st.radio("行きたい地方", todofuken)
+    else:
+        # 海外の州（または国）を選択
+        states = ["アジア", "アフリカ", "ヨーロッパ", "北アメリカ", "南アメリカ", "オセアニア"]  # 例としていくつかの国を追加
+        region = st.radio("States I want to visit", states)# デフォルトを「日本」に設定
+    days = st.slider('宿泊日数', 1, 14, 1)
+    people = st.radio('人数', ['1人', '2人', '3人', '4人', 'それ以上'])
+    traffic = st.radio('交通', ["飛行機", "船", "新幹線", "タクシー", "レンタカー", "自家用車"])
+    cost = st.sidebar.number_input("予算（円）", min_value=1000, max_value=100000000, value=10000, step=1000)
+
+    if st.button("検索する"):
+        # 入力された国を検索条件に追加
+        sentence = f"{destination_type}旅行を計画しています。行きたい場所は{region},滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。"
+        question_web(sentence)
+
 def question(sentence):
     llm = ChatOpenAI(temperature=0)
 
@@ -151,7 +179,27 @@ def question(sentence):
             st.markdown(f"**Assistant:** {message.content}")
         elif isinstance(message, HumanMessage):
             st.markdown(f"**You:** {message.content}")
-
+#def question_web(sentence):
+    # 旅行プランについて具体的な情報をDuckDuckGoで検索
+    #detailed_query = f"{sentence} の旅行プラン, おすすめの旅行ルートや観光スケジュール"
+    # DuckDuckGo検索を実行
+    #search = DuckDuckGoSearchRun()
+    #response = search.run({"query": detailed_query, "language": "jp"})
+    #st.write(response)
+def question_web(query):
+    results = DDGS().text(query, region="jp-jp", max_results=1)
+    # 検索結果があるかどうかチェックする
+    if results:
+        # 検索結果の最初の項目のタイトルとURLを取得する
+        first_result = results[0]
+        title = first_result['title']
+        href = first_result['href']
+        # タイトルとURLを表示する
+        st.write(f"タイトル: {title}")
+        st.write(f"URL: {href}")
+    else:
+        # 検索結果がなかった場合のメッセージを表示する
+        st.write("検索結果が見つかりませんでした。")
 
 if __name__ == '__main__':
     main()
