@@ -1,123 +1,86 @@
 import streamlit as st
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import (SystemMessage, HumanMessage, AIMessage)
-import pandas as pd
+from streamlit_folium import st_folium
+import folium
+from langchain_community.tools import DuckDuckGoSearchRun
+from duckduckgo_search import DDGS
 
 def main():
-    llm = ChatOpenAI(temperature=0)
+    st.set_page_config(page_title="Trip Planner", page_icon="🧳")
+    st.header("Trip Planner")
+    st.text("Make the most of your vacation with our trip planner.")
 
-    st.set_page_config(
-        page_title="Trip Planner",
-        page_icon="🧳"
-    )
-    st.header("旅行プランナー")
-    st.text("・このサイトは、皆さんのバカンスを最高なものにするために開発されました。")
-    st.text("・まずは目的地.グルメ.観光地などの気になる条件から入力してみましょう！")
-    
-    # Sidebarの選択肢を定義する
-    options = ["MAP", "MEMO", "EXIT"]
+    options = ["START", "WEB", "MAP", "MEMO", "EXIT"]
     choice = st.sidebar.selectbox("Select an option", options)
-    # Mainコンテンツの表示を変える
-    if choice == "MAP":
+
+    if choice == "START":
+        st.write("You selected START")
+        web_search()
+        trip_plan()
+        ai_chat
+    elif choice == "WEB":
+        st.write("You selected WEB")
+        web_search()
+    elif choice == "MAP":
         st.write("You selected MAP")
-        MAP()
+        display_map()
     elif choice == "MEMO":
         st.write("You selected MEMO")
-        AI()
-        condition()
+        ai_chat()
     else:
         st.write("You selected EXIT")
-        redirect()
-    # チャット履歴の初期化
-    if "messages" not in st.session_state:
-        st.session_state.messages = [
-            SystemMessage(content="You are a trip plannner.You should provide great trip plan.")
-      ]
+        st.markdown("""<meta http-equiv="refresh" content="0; url=https://www.google.com">""", unsafe_allow_html=True)
 
+def display_map():
+    m = folium.Map(location=[35.6812378, 139.7669852], zoom_start=16)
+    m.add_child(folium.LatLngPopup())
+    st_data = st_folium(m, width=725, height=500)
 
-def redirect():
-    st.markdown("""
-        <meta http-equiv="refresh" content="0; url=https://www.google.com">
-        <p>リダイレクトしています...</p>
-    """, unsafe_allow_html=True)
+    if st_data["last_clicked"] is not None:
+        clicked_lat = st_data["last_clicked"]["lat"]
+        clicked_lng = st_data["last_clicked"]["lng"]
+        st.write(f"Coordinates: Latitude {clicked_lat}, Longitude {clicked_lng}")
 
-def MAP():
-    # 緯度と経度を設定
-    latitude = 55 # 例として東京駅の緯度
-    longitude = -3 # 例として東京駅の経度
+        folium.Marker(location=[clicked_lat, clicked_lng], popup=f"Latitude: {clicked_lat}, Longitude: {clicked_lng}").add_to(m)
+        st_folium(m, width=725, height=500)
 
-    # 緯度と経度から地図用のデータフレームを作成
-    data = pd.DataFrame({
-        'lat': [latitude],
-        'lon': [longitude]
-    })
-    st.map(data)
-# 地図を表示
+def web_search():
+    user_input = st.text_input("Enter a country or city to explore:")
+    if user_input:
+        search = DuckDuckGoSearchRun()
+        response = search.run({"query": user_input, "language": "jp"})
+        st.write(response)
 
-def AI():
-    # ユーザーの入力を監視
+def ai_chat():
     llm = ChatOpenAI(temperature=0)
-    if user_input := st.chat_input("聞きたいことを入力して下さい"):
+    if "messages" not in st.session_state:
+        st.session_state.messages = [SystemMessage(content="You are a trip planner.")]
+
+    if user_input := st.chat_input("Enter your question:"):
         st.session_state.messages.append(HumanMessage(content=user_input))
         with st.spinner("ChatGPT is typing ..."):
-            response = llm(st.session_state.messages)
+            response = llm.invoke(st.session_state.messages)
         st.session_state.messages.append(AIMessage(content=response.content))
 
-    # チャット履歴の表示
-    messages = st.session_state.get('messages', [])
-    for message in messages:
+    for message in st.session_state.get('messages', []):
         if isinstance(message, AIMessage):
-            with st.chat_message('assistant'):
-                st.markdown(message.content)
+            st.markdown(f"**Assistant:** {message.content}")
         elif isinstance(message, HumanMessage):
-            with st.chat_message('user'):
-                st.markdown(message.content)
-        else:  # isinstance(message, SystemMessage):
-            st.write(f"System message: {message.content}")
-    #st.image("c:/Users/junakimichi/Pictures/Saved Picture/IMG_0356.JPG", use_column_width=True)
+            st.markdown(f"**You:** {message.content}")
 
+def trip_plan():
+    destination_type = st.radio("Select trip type", ['Domestic', 'International'])
+    region_options = ["Hokkaido", "Tohoku", "Kanto", "Chubu", "Kinki", "Chugoku", "Shikoku", "Kyushu", "Okinawa"] if destination_type == 'Domestic' else ["Asia", "Africa", "Europe", "North America", "South America", "Oceania"]
+    region = st.radio("Choose a region", region_options)
+    days = st.slider('Days', 1, 14, 1)
+    people = st.radio('Number of people', ['1', '2', '3', '4', 'More'])
+    traffic = st.radio('Transportation', ["Flight", "Ship", "Shinkansen", "Taxi", "Rental Car", "Private Car"])
+    cost = st.sidebar.number_input("Budget (JPY)", min_value=1000, max_value=100000000, value=10000, step=1000)
 
-def condition():
-    value = st.slider('宿泊日数', 1, 14, 1) # min, max, default
-    people = st.radio(
-        '人数', 
-        ['1人', '2人', '3人',"4人","それ以上"]
-    )
-    traffic = st.radio(
-        "交通",
-        ["飛行機","船","新幹線","タクシー","レンタカー","自家用車"]
-    )
-    cost = st.radio(
-        "予算",
-        ["e","f","g","h"]    
-    )
-    if st.button("検索する"):
-        question()
-        st.session_state["value"]=value
-        st.session_state["people"]=people
-        st.session_state["traffic"]=traffic
-        st.session_state["cost"]=cost
-
-def question():
-    st.write("選択した条件一覧")
+    if st.button("Search"):
+        query = f"Planning a {destination_type.lower()} trip to {region} for {days} days with {people} person(s), budget {cost} JPY, using {traffic}. Respond in Japanese."
+        
 
 if __name__ == '__main__':
     main()
-
-    options = ["START","MAP", "MEMO", "EXIT"]
-    choice = st.sidebar.selectbox("Select an option", options)
-    budget = st.sidebar.number_input("予算（円）", min_value=1000, max_value=100000000, value=10000, step=1000)
-    date = st.date_input("Pick a date")
-    days = st.radio(
-        'How many days will you stay?', 
-        ['1', '2', '3', '4', '5']
-    )
-    traffic = st.radio(
-        'Which transportation', 
-        ['飛行機', '船', '新幹線', 'タクシー', 'レンタカー','マイカー']
-    )
-    num_of_people = st.radio(
-        'How many people?', 
-        ['1', '2', '3', '4', '5']
-    )      
-    budget = st.sidebar.number_input("予算（円）", min_value=1000, max_value=100000000, value=10000, step=1000)
