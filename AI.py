@@ -4,6 +4,8 @@ from langchain.schema import (SystemMessage, HumanMessage, AIMessage)
 import pandas as pd
 import datetime
 import pydeck as pdk
+import folium
+from streamlit_folium import st_folium
 
 
 
@@ -43,39 +45,42 @@ def redirect():
     """, unsafe_allow_html=True)
 
 def MAP():
-    # 初期マップの表示設定
-    view_state = pdk.ViewState(
-        latitude=35.6804,  # 初期表示する緯度
-        longitude=135.7690,  # 初期表示する経度
-        zoom=10,  # ズームレベル
-        pitch=50
-    )
+        # セッション状態で地図データを管理
+    if "map_data" not in st.session_state:
+        st.session_state.map_data = {
+            "location": [35.6812378, 139.7669852],  # 初期位置
+            "markers": []  # マーカーのリスト
+        }
 
-    # マップのレイヤー設定（何も表示しないベースマップ）
-    layer = pdk.Layer(
-        "ScatterplotLayer",  # シンプルなマップ表示
-        data=[],  # 初期データなし
-        get_position='[lon, lat]',  # 緯度経度を設定するフィールド
-        get_color='[200, 30, 0, 160]',
-        get_radius=200,
-    )
+    # 初期地図を生成
+    m = folium.Map(location=st.session_state.map_data["location"], zoom_start=16)
+    m.add_child(folium.LatLngPopup())
 
-    # Pydeckマップを表示
-    map = pdk.Deck(
-        map_style="mapbox://styles/mapbox/light-v9",
-        initial_view_state=view_state,
-        layers=[layer],
-        tooltip={"text": "Click on the map to get the coordinates!"}
-    )
+    # 既存のマーカーを地図に追加
+    for marker in st.session_state.map_data["markers"]:
+        folium.Marker(location=marker, popup=f"Latitude: {marker[0]}, Longitude: {marker[1]}").add_to(m)
 
-    # Pydeckでマップを表示
-    map_output = st.pydeck_chart(map)
+    # ユーザーがクリックした地図の情報を取得
+    st_data = st_folium(m, width=725, height=500)
+
+    if st_data["last_clicked"] is not None:
+        clicked_lat = st_data["last_clicked"]["lat"]
+        clicked_lng = st_data["last_clicked"]["lng"]
+
+        # 新しい座標をセッション状態に保存し、前のマーカーをクリア
+        st.session_state.map_data["location"] = [clicked_lat, clicked_lng]
+        st.session_state.map_data["markers"] = [[clicked_lat, clicked_lng]]
+
+        st.write(f"Coordinates: Latitude {clicked_lat}, Longitude {clicked_lng}")
+
+        # 新しい地図を再描画
+        m = folium.Map(location=st.session_state.map_data["location"], zoom_start=16)
+        folium.Marker(location=[clicked_lat, clicked_lng], popup=f"Latitude: {clicked_lat}, Longitude: {clicked_lng}").add_to(m)
+        st_folium(m, width=725, height=500)
 
     # 地図上のクリックイベントを処理するためのインタラクション
-    if st.button("クリックした場所の緯度経度を取得"):
-        # 現在の地図の状態を取得して、クリックした座標を取得（仮のロジック）
-        # Note: Streamlit自体で直接クリック位置を取得する機能はないため、Pydeckの拡張や外部ツールが必要
-        st.write("緯度経度を取得しました！(ダミー値: 緯度 35.6804, 経度 139.7690)")  # 仮の値を表示
+    #if st.button("クリックした場所の緯度経度を取得"):
+        #st.write(f"緯度経度を取得しました！ 緯度{clicked_lat}  経度 {clicked_lng}")  # 緯度経度を表示
 
 
 def AI():
