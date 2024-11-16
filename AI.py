@@ -8,7 +8,6 @@ import folium
 from streamlit_folium import st_folium
 
 
-
 def main():
     llm = ChatOpenAI(temperature=0)
 
