@@ -158,27 +158,39 @@ def condition_web():
     people = st.radio('人数', ['1人', '2人', '3人', '4人', 'それ以上'])
     traffic = st.radio('交通', ["飛行機", "船", "新幹線", "タクシー", "レンタカー", "自家用車"])
     cost = st.sidebar.number_input("予算（円）", min_value=1000, max_value=100000000, value=10000, step=1000)
+    other1 = st.text_area("他にもリクエストがある場合はここに記入してください。特になければ、[なし]にチェックを入れてください。",placeholder="羽田空港発で、出来れば早朝の便は避けたいです。")
+    other2 = st.checkbox("なし")
 
+    if other1:
+        other0 = other1
+    else:
+        other0 = "なし"
     if st.button("検索する"):
         # 入力された国を検索条件に追加
-        sentence = f"{destination_type}旅行を計画しています。行きたい場所は{region},滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。"
-        question_web(sentence)
+        sentence_duck = f"{destination_type}旅行を計画しています。行きたい場所は{region},滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。他のリクエストは「{other0}」です。最適な旅行プランを考えて下さい。応答は必ず日本語でお願いします。"
+        duckduckgo(sentence_duck)
 
 def question(sentence):
-    llm = ChatOpenAI(temperature=0)
-
+    user_input = sentence+"please response in japanese. 応答は必ず日本語で生成してください"
+    print(user_input)
     st.write("この条件で検索しています・・・")
-    
-    st.session_state.messages.append(HumanMessage(content=sentence))
-    with st.spinner("ChatGPT is typing ..."):
-        response = llm.invoke(st.session_state.messages)
-    st.session_state.messages.append(AIMessage(content=response.content))
+    llm = ChatOpenAI(temperature=0)
+    if user_input := sentence:
+        st.session_state.messages.append(HumanMessage(content=user_input))
+        with st.spinner("ChatGPT is typing ..."):
+            response = llm(st.session_state.messages)
+        st.session_state.messages.append(AIMessage(content=response.content))
 
-    for message in st.session_state.messages:
+    messages = st.session_state.get('messages', [])
+    for message in messages:
         if isinstance(message, AIMessage):
-            st.markdown(f"**Assistant:** {message.content}")
+            with st.chat_message('assistant'):
+                st.markdown(message.content)
         elif isinstance(message, HumanMessage):
-            st.markdown(f"**You:** {message.content}")
+            with st.chat_message('user'):
+                st.markdown(message.content)
+        else:  # isinstance(message, SystemMessage):
+            st.write(f"System message: {message.content}")
 #def question_web(sentence):
     # 旅行プランについて具体的な情報をDuckDuckGoで検索
     #detailed_query = f"{sentence} の旅行プラン, おすすめの旅行ルートや観光スケジュール"
@@ -186,20 +198,61 @@ def question(sentence):
     #search = DuckDuckGoSearchRun()
     #response = search.run({"query": detailed_query, "language": "jp"})
     #st.write(response)
-def question_web(query):
-    results = DDGS().text(query, region="jp-jp", max_results=1)
-    # 検索結果があるかどうかチェックする
-    if results:
-        # 検索結果の最初の項目のタイトルとURLを取得する
-        first_result = results[0]
-        title = first_result['title']
-        href = first_result['href']
-        # タイトルとURLを表示する
-        st.write(f"タイトル: {title}")
-        st.write(f"URL: {href}")
-    else:
-        # 検索結果がなかった場合のメッセージを表示する
-        st.write("検索結果が見つかりませんでした。")
+
+
+
+def duckduckgo(sentence_duck):
+    st.title("duckduckgo 検索結果")
+
+    # 検索を実行する関数
+    def search_duckduckgo(query):
+        results = DDGS().text(query, region="jp-jp", max_results=5)
+        # 検索結果があるかどうかチェックする
+        if results:
+            # 検索結果の最初の項目のタイトルとURLを取得する
+            first_result = results[0]
+            title = first_result['title']
+            href = first_result['href']
+            # タイトルとURLを表示する
+            st.write(f"1: {title}")
+            st.write(f"URL: {href}")
+            # 検索結果の二番目の項目のタイトルとURLを取得する
+            second_result = results[1]
+            title2 = second_result['title']
+            href2 = second_result['href']
+            # タイトルとURLを表示する
+            st.write(f"2: {title2}")
+            st.write(f"URL: {href2}")
+            # 検索結果の三番目の項目のタイトルとURLを取得する
+            third_result = results[2]
+            title3 = third_result['title']
+            href3 = third_result['href']
+            # タイトルとURLを表示する
+            st.write(f"3: {title3}")
+            st.write(f"URL: {href3}")
+            anothersearch = st.button("もっと見る")
+            if anothersearch:
+                # 検索結果の四番目の項目のタイトルとURLを取得する
+                four_result = results[3]
+                title4 = four_result['title']
+                href4 = four_result['href']
+                # タイトルとURLを表示する
+                st.write(f"4: {title4}")
+                st.write(f"URL: {href4}")
+                # 検索結果の四番目の項目のタイトルとURLを取得する
+                five_result = results[4]
+                title5 = five_result['title']
+                href5 = five_result['href']
+                # タイトルとURLを表示する
+                st.write(f"5: {title5}")
+                st.write(f"URL: {href5}")
+        else:
+            # 検索結果がなかった場合のメッセージを表示する
+            st.write("検索結果が見つかりませんでした。")
+
+    # 検索を実行する
+    
+    search_duckduckgo(sentence_duck)
 
 if __name__ == '__main__':
     main()
