@@ -49,40 +49,37 @@ def redirect():
     """, unsafe_allow_html=True)
 #35.68123360506802, 139.76695041934764
 def MAP():
-    m = folium.Map(
-        location=[35.68123782435746, 139.7669852797953],
-        zoom_start=16,
-        attr='Folium map'
-    )
+    # セッション状態で地図データを管理
+    if "map_data" not in st.session_state:
+        st.session_state.map_data = {
+            "location": [35.6812378, 139.7669852],  # 初期位置
+            "markers": []  # マーカーのリスト
+        }
 
-    # 地図上のクリックした場所にポップアップを表示する
+    # 初期地図を生成
+    m = folium.Map(location=st.session_state.map_data["location"], zoom_start=16)
     m.add_child(folium.LatLngPopup())
 
-    # ユーザーのクリック情報を取得
+    # 既存のマーカーを地図に追加
+    for marker in st.session_state.map_data["markers"]:
+        folium.Marker(location=marker, popup=f"Latitude: {marker[0]}, Longitude: {marker[1]}").add_to(m)
+
+    # ユーザーがクリックした地図の情報を取得
     st_data = st_folium(m, width=725, height=500)
 
-    # ユーザーが地図上をクリックした場合の処理
     if st_data["last_clicked"] is not None:
         clicked_lat = st_data["last_clicked"]["lat"]
         clicked_lng = st_data["last_clicked"]["lng"]
 
-        st.write(f"クリックした場所の座標: 緯度 {clicked_lat}, 経度 {clicked_lng}")
+        # 新しい座標をセッション状態に保存し、前のマーカーをクリア
+        st.session_state.map_data["location"] = [clicked_lat, clicked_lng]
+        st.session_state.map_data["markers"] = [[clicked_lat, clicked_lng]]
 
-        # 新しい地図を作成してクリックした場所にマーカーを追加
-        m = folium.Map(
-            location=[clicked_lat, clicked_lng],
-            zoom_start=16,
-            attr='Folium map'
-        )
+        st.write(f"Coordinates: Latitude {clicked_lat}, Longitude {clicked_lng}")
 
-        # マーカーをクリックした場所に追加
-        folium.Marker(
-            location=[clicked_lat, clicked_lng],
-            popup=f"Latitude: {clicked_lat}, Longitude: {clicked_lng}",
-            tooltip="Click me!"
-        ).add_to(m)
-
-        # マップを再表示
+        # 新しい地図を再描画
+        m = folium.Map(location=st.session_state.map_data["location"], zoom_start=16)
+        folium.Marker(location=[clicked_lat, clicked_lng], popup=f"Latitude: {clicked_lat}, Longitude: {clicked_lng}").add_to(m)
         st_folium(m, width=725, height=500)
     
 def web():
