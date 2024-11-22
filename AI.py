@@ -26,6 +26,7 @@ def main():
     if choice == "START":
         st.write("You selected START")
         AI()
+        web()
         condition()
     elif choice == "MAP":
         st.write("You selected MAP")
