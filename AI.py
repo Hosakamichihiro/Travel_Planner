@@ -12,10 +12,10 @@ def main():
     llm = ChatOpenAI(temperature=0)
 
     st.set_page_config(
-        page_title="Trip Planner",
+        page_title="Travel Planner",
         page_icon="🧳"
     )
-    st.header("Trip Planner")
+    st.header("Travel Planner")
     st.text("・This site was developed to help you make the most of your vacation.")
     st.text("・First, enter the conditions you are interested in,")
     st.text("    such as your destination, gourmet food, tourist spots, etc.")
