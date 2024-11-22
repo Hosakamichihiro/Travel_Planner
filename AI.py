@@ -20,7 +20,7 @@ def main():
     st.text("・First, enter the conditions you are interested in,")
     st.text("    such as your destination, gourmet food, tourist spots, etc.")
     # Sidebarの選択肢を定義する
-    options = ["START","MAP", "MEMO", "EXIT"]
+    options = ["START","WEB","MAP", "MEMO", "EXIT"]
     choice = st.sidebar.selectbox("Select an option", options)
 
     if choice == "START":
@@ -28,6 +28,10 @@ def main():
         AI()
         web()
         condition()
+    elif choice == "WEB":
+        st.write("You selected WEB")
+        AI()
+        condition_web()
     elif choice == "MAP":
         st.write("You selected MAP")
         MAP()
@@ -130,7 +134,7 @@ def condition():
 
     # 他の条件
     date = st.date_input('出発日を選択')
-    Departure_point = st.text_input('出発地')
+    Departure_point = st.text_input('出発地を入力')
     days = st.slider('滞在日数', 1, 14, 1)
     time = st.time_input("出発時間を入力", value=None)
     people = st.radio('人数', ['1人', '2人', '3人', '4人', 'それ以上'])
