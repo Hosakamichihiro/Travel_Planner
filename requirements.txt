@@ -6,6 +6,7 @@ certifi==2024.6.2
 charset-normalizer==3.3.2
 click==8.1.7
 colorama==0.4.6
+cv2==4.6.0
 dataclasses-json==0.6.7
 distro==1.9.0
 duckduckgo-search==6.3.5
