@@ -37,6 +37,7 @@ multidict==6.0.5
 mypy-extensions==1.0.0
 numpy==1.26.4
 openai==1.35.13
+opencv-python
 orjson==3.10.5
 packaging==24.1
 pandas==2.2.2
