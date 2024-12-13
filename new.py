@@ -6,15 +6,17 @@ from  streamlit_folium import st_folium
 import folium
 from langchain_community.tools import DuckDuckGoSearchRun
 from duckduckgo_search import DDGS
+import requests
+from bs4 import BeautifulSoup
 
 def main():
     llm = ChatOpenAI(temperature=0)
 
     st.set_page_config(
-        page_title="Trip Planner",
+        page_title="Travel Planner",
         page_icon="🧳"
     )
-    st.header("Trip Planner")
+    st.header("Travel Planner")
     st.text("・This site was developed to help you make the most of your vacation.")
     st.text("・First, enter the conditions you are interested in,")
     st.text("    such as your destination, gourmet food, tourist spots, etc.")
@@ -139,6 +141,7 @@ def condition():
         question(sentence)
 
 def condition_web():
+    global sentence_duck
     # 国を入力させるフィールドを追加
     # 国内か海外か選択
     destination_type = st.radio("国内旅行か海外旅行か選んでください", ['国内', '海外'])
@@ -197,6 +200,34 @@ def question(sentence):
     #st.write(response)
 
 
+# URLの中身を取得してテキストを表示する関数
+def display_url_content(url):
+    global sentence_duck
+    try:
+        # URLからウェブページのコンテンツを取得する
+        response = requests.get(url)
+        response.raise_for_status()  # エラーがあれば例外を投げる
+        print(response)
+        # HTMLを解析する
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # ここでは例としてすべてのテキストを抽出していますが、
+        # より詳細な情報が必要であれば、HTMLの特定の部分を指定することもできます
+        text = soup.get_text()
+
+        # テキストを表示する
+        
+        sentence_duck_2 = f"{text}を踏まえて{sentence_duck}"
+        question(sentence_duck_2)  # このテキストをChatGPTに渡すことができます
+        
+    except requests.RequestException as e:
+        # HTTPリクエストでエラーが発生した場合の処理
+        st.write("エラーが発生しました。")
+        st.write(e)
+
+# 抽出したテキストをChatGPTに入力として使用するためには、
+# 関数を実装してChatGPT APIにリクエストを送信し、
+# 結果を取得して表示するロジックを追加する必要があります。
 
 def duckduckgo(sentence_duck):
     st.title("duckduckgo 検索結果")
@@ -213,6 +244,7 @@ def duckduckgo(sentence_duck):
             # タイトルとURLを表示する
             st.write(f"1: {title}")
             st.write(f"URL: {href}")
+            display_url_content(href)
             # 検索結果の二番目の項目のタイトルとURLを取得する
             second_result = results[1]
             title2 = second_result['title']
@@ -253,3 +285,4 @@ def duckduckgo(sentence_duck):
 
 if __name__ == '__main__':
     main()
+    #URLを指定して、そのURLの中身を取得して、テキスト形式で表示し、それを踏まえてChatGPTに案を考えさせる
