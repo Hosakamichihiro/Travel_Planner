@@ -192,8 +192,10 @@ def question(sentence):
         #elif isinstance(message, HumanMessage):
             #st.markdown(f"**You:** {message.content}")
 
+
+
 def duckduckgo(sentence_duck):
-    st.title("duckduckgo 検索結果")
+    st.subheader("duckduckgo 検索結果")
 
     # 検索を実行する関数
     def search_duckduckgo(query):
