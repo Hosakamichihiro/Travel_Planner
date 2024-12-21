@@ -3,45 +3,59 @@ import cv2
 import numpy as np
 from PIL import Image
 import io
+
+def resize_image(image, new_width, new_height):
+    """画像をリサイズする関数"""
+    resized_image = image.resize((new_width, new_height))
+    return resized_image
+
+def rotate_image_pil(image, angle):
+    """Pillow形式の画像を回転する関数"""
+    return image.rotate(angle, expand=True)
+
+def convert_to_pil(image_cv2):
+    """OpenCV形式の画像をPillow形式に変換する関数"""
+    if len(image_cv2.shape) == 2:  # グレースケールの場合
+        return Image.fromarray(image_cv2)
+    else:  # カラー画像の場合
+        return Image.fromarray(cv2.cvtColor(image_cv2, cv2.COLOR_BGR2RGB))
+
 st.set_page_config(
     page_title="Image Processing App", 
     page_icon="🧳"
 )
+
 # Streamlitアプリの設定
-st.title("画像処理アプリ:Theme")
+st.title("画像処理アプリ:テーマ")
 st.subheader("画像をアップロードして処理を試してみてください。")
 
 # サイドバーで操作の種類を選択
 option = st.sidebar.selectbox(
     "操作を選択してください",
-    ["オリジナル", "グレースケール", "ぼかし", "エッジ検出", "解像度アップ"]
+    ["オリジナル", "グレースケール", "ぼかし", "エッジ検出", "解像度アップ", "サイズ変更", "画像回転"]
 )
+
 # 画像アップロード
 uploaded_file = st.file_uploader("画像をアップロードしてください", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # PILで画像を読み込む
+    # Pillowで画像を読み込む
     image = Image.open(uploaded_file)
     st.image(image, caption="アップロードされた画像", use_column_width=True)
     image_np = np.array(image)
     image_cv2 = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
-    # OpenCV形式に変換
-    image_cv2 = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
 
     # 処理する画像の初期化
     processed_image = image_cv2
 
     # 選択された操作に応じて処理
-    if option == "元の画像を表示":
-        st.write("元の画像を表示しています。")
+    if option == "オリジナル":
         processed_image = image_cv2
-    elif option == "オリジナル":
-        processed_image = image_np
+
     elif option == "グレースケール":
         processed_image = cv2.cvtColor(image_cv2, cv2.COLOR_BGR2GRAY)
 
     elif option == "ぼかし":
-        # 奇数カーネルサイズを設定
         ksize = st.sidebar.slider("ぼかしの強さ (奇数のみ)", 1, 21, 5, step=2)
         processed_image = cv2.GaussianBlur(image_cv2, (ksize, ksize), 0)
 
@@ -50,15 +64,30 @@ if uploaded_file is not None:
         threshold2 = st.sidebar.slider("閾値2", 0, 255, 150)
         processed_image = cv2.Canny(image_cv2, threshold1, threshold2)
 
-    elif option == "画像解像度を上げる":
-        # 解像度を上げる（2倍に拡大）
+    elif option == "解像度アップ":
         upscale_factor = st.sidebar.slider("拡大倍率", 1, 4, 2)
         width = image_cv2.shape[1] * upscale_factor
         height = image_cv2.shape[0] * upscale_factor
         processed_image = cv2.resize(image_cv2, (width, height), interpolation=cv2.INTER_CUBIC)
 
-    # OpenCV形式をPIL形式に変換
-    processed_image_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
+    elif option == "サイズ変更":
+        new_width = st.sidebar.number_input("新しい幅を入力してください (px)", min_value=1, value=image.width)
+        new_height = st.sidebar.number_input("新しい高さを入力してください (px)", min_value=1, value=image.height)
+        if st.button("サイズを変更"):
+            processed_image = resize_image(image, int(new_width), int(new_height))
+            #st.image(processed_image, caption="リサイズされた画像", use_column_width=True)
+
+    elif option == "画像回転":
+        angle = st.sidebar.slider("回転角度を選択してください (度)", min_value=0, max_value=360, value=0, step=1)
+        if st.button("画像を処理"):
+            processed_image = rotate_image_pil(image, angle)
+            #st.image(processed_image, caption="回転された画像", use_column_width=True)
+
+    # OpenCV形式の画像をPillow形式に変換
+    if isinstance(processed_image, np.ndarray):
+        processed_image_pil = convert_to_pil(processed_image)
+    else:
+        processed_image_pil = processed_image
 
     # 加工後の画像を表示
     st.image(processed_image_pil, caption="加工後の画像", use_column_width=True)
