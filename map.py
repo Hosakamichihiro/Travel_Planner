@@ -1,74 +1,67 @@
 import streamlit as st
-from  streamlit_folium import st_folium
-import folium
+import json
+from urllib.parse import urlencode, parse_qs
 
-# 地図の表示箇所とズームレベルを指定してマップデータを作成
-# attr（アトリビュート）は地図右下に表示する文字列。
-# デフォルトマップの場合は省略可能
-
+# 旅行プラン共有アプリ
 def main():
-    # タイトル。最もサイズが大きい。ページタイトル向け
-    st.title('Map')
-    # ヘッダ。２番目に大きい。項目名向け
-    st.header('Streamlit')
+    st.title("旅行プラン共有アプリ")
 
-    m = folium.Map(
-        location=[35, 135],
-        zoom_start=16,
-        attr='Folium map'
-    )
+    # ページモード切り替え
+    mode = st.sidebar.selectbox("モードを選択", ["プラン作成", "プラン閲覧"])
 
-    # 地図上のクリックした場所にポップアップを表示する
-    m.add_child(folium.LatLngPopup())
+    if mode == "プラン作成":
+        st.subheader("旅行プランを作成")
 
-    # ユーザーのクリック情報を取得
-    st_data = st_folium(m, width=725, height=500)
+        # ユーザーが入力するプラン情報
+        trip_title = st.text_input("旅行のタイトルを入力してください", placeholder="例: 京都旅行プラン")
+        start_date = st.date_input("開始日を選択")
+        end_date = st.date_input("終了日を選択")
+        destinations = st.text_area("訪問先を入力（1行に1つ）", placeholder="例:\n清水寺\n金閣寺\n祇園")
 
-    # ユーザーが地図上をクリックした場合の処理
-    if st_data["last_clicked"] is not None:
-        clicked_lat = st_data["last_clicked"]["lat"]
-        clicked_lng = st_data["last_clicked"]["lng"]
+        # プラン保存ボタン
+        if st.button("プランを保存して共有リンクを生成"):
+            if not trip_title or not destinations:
+                st.warning("タイトルと訪問先を入力してください。")
+            elif start_date > end_date:
+                st.warning("終了日は開始日以降の日付を選択してください。")
+            else:
+                # プランをJSON形式で保存
+                trip_plan = {
+                    "title": trip_title,
+                    "start_date": str(start_date),
+                    "end_date": str(end_date),
+                    "destinations": destinations.splitlines()
+                }
+                plan_json = json.dumps(trip_plan)
+                encoded_plan = urlencode({"plan": plan_json})
 
-        st.write(f"クリックした場所の座標: 緯度 {clicked_lat}, 経度 {clicked_lng}")
+                # 共有リンクを生成
+                base_url = "https://share.streamlit.io/your_app_name"
+                share_url = f"{base_url}?{encoded_plan}"
+                st.success("プランが保存されました！以下のリンクを共有してください。")
+                st.text_input("共有リンク", value=share_url, disabled=True)
 
-        # 新しい地図を作成してクリックした場所にマーカーを追加
-        m = folium.Map(
-            location=[clicked_lat, clicked_lng],
-            zoom_start=16,
-            attr='Folium map'
-        )
+    elif mode == "プラン閲覧":
+        st.subheader("共有された旅行プランを表示")
 
-        # マーカーをクリックした場所に追加
-        folium.Marker(
-            location=[clicked_lat, clicked_lng],
-            popup=f"Latitude: {clicked_lat}, Longitude: {clicked_lng}",
-            tooltip="Click me!"
-        ).add_to(m)
+        # URLパラメータからプランを取得
+        query_params = st.experimental_get_query_params()
+        if "plan" in query_params:
+            try:
+                plan_json = query_params["plan"][0]
+                trip_plan = json.loads(plan_json)
 
-        # マップを再表示
-        st_folium(m, width=725, height=500)
+                # プランを表示
+                st.write(f"### {trip_plan['title']}")
+                st.write(f"**開始日**: {trip_plan['start_date']}")
+                st.write(f"**終了日**: {trip_plan['end_date']}")
+                st.write("**訪問先**:")
+                for destination in trip_plan["destinations"]:
+                    st.write(f"- {destination}")
+            except Exception as e:
+                st.error(f"プランの読み込み中にエラーが発生しました: {e}")
+        else:
+            st.info("共有リンクを使用して旅行プランを表示してください。")
 
-
-    
-    lang_dict = {
-
-    "error": "エラーメッセージ。赤文字に薄赤背景",
-    "warning": "警告メッセージ。黄色文字に薄黄色背景",
-    "info": "情報メッセージ。青文字に薄青背景",
-    "success" : "成功メッセージ。緑文字に薄緑背景",
-    "exception(Exception('Ooops!'))" : "例外メッセージ。Exception部分が太字の赤文字・薄赤背景"
-   
-    }
-
-    st.subheader("Choose a widget")
-    #streamlitのセレクトボックスを使って、辞書からアイテムを選びます。
-    lang = st.selectbox(label="Streamlit widget",options=lang_dict)
-
-    st.write("You selected", lang,".")
-
-    st.write("explanation:", lang_dict[lang]) #キーを指定して、説明を取り出します。
-    
-    
-
-if __name__ == '__main__':
-  main()
+if __name__ == "__main__":
+    main()
