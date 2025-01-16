@@ -8,6 +8,7 @@ from langchain_community.tools import DuckDuckGoSearchRun
 from duckduckgo_search import DDGS
 import requests
 from bs4 import BeautifulSoup
+from geopy.geocoders import Nominatim  
 
 def main():
     llm = ChatOpenAI(temperature=0)
@@ -66,24 +67,36 @@ def MAP():
     for marker in st.session_state.map_data["markers"]:
         folium.Marker(location=marker, popup=f"Latitude: {marker[0]}, Longitude: {marker[1]}").add_to(m)
 
-    # ユーザーがクリックした地図の情報を取得
+    # 地図をクリックしたときの処理
     st_data = st_folium(m, width=725, height=500)
-
-    if st_data["last_clicked"] is not None:
+    if st_data and st_data["last_clicked"] is not None:
         clicked_lat = st_data["last_clicked"]["lat"]
         clicked_lng = st_data["last_clicked"]["lng"]
-
-        # 新しい座標をセッション状態に保存し、前のマーカーをクリア
         st.session_state.map_data["location"] = [clicked_lat, clicked_lng]
-        st.session_state.map_data["markers"] = [[clicked_lat, clicked_lng]]
+        st.session_state.map_data["markers"].append([clicked_lat, clicked_lng])
+        st.write(f"Clicked Location: Latitude {clicked_lat}, Longitude {clicked_lng}")
 
-        st.write(f"Coordinates: Latitude {clicked_lat}, Longitude {clicked_lng}")
+    # 観光地検索フォームを表示
+    st.write("観光名所を検索")
+    location_name = st.text_input("観光名所名または都市名を入力してください:")
 
-        # 新しい地図を再描画
-        m = folium.Map(location=st.session_state.map_data["location"], zoom_start=16)
-        folium.Marker(location=[clicked_lat, clicked_lng], popup=f"Latitude: {clicked_lat}, Longitude: {clicked_lng}").add_to(m)
-        st_folium(m, width=725, height=500)
-    
+    # 観光地の検索ボタン
+    if st.button("検索してマップに追加"):
+        if location_name.strip():
+            geolocator = Nominatim(user_agent="my_trip_planner_app")  # ユニークなuser_agentを設定
+            try:
+                location = geolocator.geocode(location_name, language="ja")
+                if location:
+                    lat, lon = location.latitude, location.longitude
+                    st.session_state.map_data["location"] = [lat, lon]
+                    st.session_state.map_data["markers"].append([lat, lon])
+                    st.success(f"Location found: {location_name} ({lat}, {lon})")
+                else:
+                    st.error(f"Location '{location_name}' not found. Please check the spelling or try another location.")
+            except Exception as e:
+                st.error(f"An error occurred while fetching the location: {e}")
+        else:
+            st.warning("Please enter a location name.")
 def web():
     # 商品名またはブランドを入力してくださいというフィールドを定義する
     user_input_web = st.text_input("国名または都市名を入力してください.入力することで、行きたい国について、少し知ることができます.詳しく知りたい場合は、下の、'Enter your question'に.")
