@@ -10,6 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 from geopy.geocoders import Nominatim 
 
+
 def main():
     llm = ChatOpenAI(temperature=0)
 
