@@ -6,6 +6,8 @@ from  streamlit_folium import st_folium
 import folium
 from langchain_community.tools import DuckDuckGoSearchRun
 from duckduckgo_search import DDGS
+import requests
+from bs4 import BeautifulSoup
 from geopy.geocoders import Nominatim  
 
 
@@ -164,6 +166,7 @@ def condition():
         question(sentence)
 
 def condition_web():
+    global sentence_duck
     # 国を入力させるフィールドを追加
     # 国内か海外か選択
     destination_type = st.radio("国内旅行か海外旅行か選んでください", ['国内', '海外'])
@@ -190,7 +193,7 @@ def condition_web():
     if st.button("検索する"):
         # 入力された国を検索条件に追加
         sentence_duck = f"{destination_type}旅行を計画しています。行きたい場所は{region},滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。他のリクエストは「{other0}」です。最適な旅行プランを考えて下さい。応答は必ず日本語でお願いします。"
-        #duckduckgo(sentence_duck)
+        duckduckgo(sentence_duck)
 
 
 def question(sentence):
@@ -209,6 +212,87 @@ def question(sentence):
         #elif isinstance(message, HumanMessage):
             #st.markdown(f"**You:** {message.content}")
 
+def display_url_content(url):
+    global sentence_duck
+    try:
+        # URLからウェブページのコンテンツを取得する
+        response = requests.get(url)
+        response.raise_for_status()  # エラーがあれば例外を投げる
+        print(response)
+        # HTMLを解析する
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # ここでは例としてすべてのテキストを抽出していますが、
+        # より詳細な情報が必要であれば、HTMLの特定の部分を指定することもできます
+        text = soup.get_text()
+
+        # テキストを表示する
+        
+        sentence_duck_2 = f"{text}を踏まえて{sentence_duck}"
+        question(sentence_duck_2)  # このテキストをChatGPTに渡すことができます
+        
+    except requests.RequestException as e:
+        # HTTPリクエストでエラーが発生した場合の処理
+        st.write("エラーが発生しました。")
+        st.write(e)
+
+# 抽出したテキストをChatGPTに入力として使用するためには、
+# 関数を実装してChatGPT APIにリクエストを送信し、
+# 結果を取得して表示するロジックを追加する必要があります。
+
+def duckduckgo(sentence_duck):
+    st.title("duckduckgo 検索結果")
+
+    # 検索を実行する関数
+    def search_duckduckgo(query):
+        results = DDGS().text(query, region="jp-jp", max_results=5)
+        # 検索結果があるかどうかチェックする
+        if results:
+            # 検索結果の最初の項目のタイトルとURLを取得する
+            first_result = results[0]
+            title = first_result['title']
+            href = first_result['href']
+            # タイトルとURLを表示する
+            st.write(f"1: {title}")
+            st.write(f"URL: {href}")
+            display_url_content(href)
+            # 検索結果の二番目の項目のタイトルとURLを取得する
+            second_result = results[1]
+            title2 = second_result['title']
+            href2 = second_result['href']
+            # タイトルとURLを表示する
+            st.write(f"2: {title2}")
+            st.write(f"URL: {href2}")
+            # 検索結果の三番目の項目のタイトルとURLを取得する
+            third_result = results[2]
+            title3 = third_result['title']
+            href3 = third_result['href']
+            # タイトルとURLを表示する
+            st.write(f"3: {title3}")
+            st.write(f"URL: {href3}")
+            anothersearch = st.button("もっと見る")
+            if anothersearch:
+                # 検索結果の四番目の項目のタイトルとURLを取得する
+                four_result = results[3]
+                title4 = four_result['title']
+                href4 = four_result['href']
+                # タイトルとURLを表示する
+                st.write(f"4: {title4}")
+                st.write(f"URL: {href4}")
+                # 検索結果の四番目の項目のタイトルとURLを取得する
+                five_result = results[4]
+                title5 = five_result['title']
+                href5 = five_result['href']
+                # タイトルとURLを表示する
+                st.write(f"5: {title5}")
+                st.write(f"URL: {href5}")
+        else:
+            # 検索結果がなかった場合のメッセージを表示する
+            st.write("検索結果が見つかりませんでした。")
+
+    # 検索を実行する
+    
+    search_duckduckgo(sentence_duck)
 
 if __name__ == '__main__':
     main()
