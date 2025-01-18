@@ -194,7 +194,7 @@ def question(sentence):
     if user_input := sentence:
         st.session_state.messages.append(HumanMessage(content=user_input))
         with st.spinner("ChatGPT is typing ..."):
-            response = llm(st.session_state.messages)
+            response = llm.invoke(st.session_state.messages)
         st.session_state.messages.append(AIMessage(content=response.content))
         
 

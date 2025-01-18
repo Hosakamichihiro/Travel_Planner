@@ -1,5 +1,5 @@
 import streamlit as st
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.schema import (SystemMessage, HumanMessage, AIMessage)
 import pandas as pd
 from  streamlit_folium import st_folium
@@ -213,13 +213,13 @@ def condition_web():
 
 def question(sentence):
     user_input = sentence+"please response in japanese. 応答は必ず日本語で生成してください"
-    print(user_input)
+    #print(user_input)
     st.write("この条件で検索しています・・・")
     llm = ChatOpenAI(temperature=0)
     if user_input := sentence:
         st.session_state.messages.append(HumanMessage(content=user_input))
         with st.spinner("ChatGPT is typing ..."):
-            response = llm(st.session_state.messages)
+            response = llm.invoke(st.session_state.messages)
         st.session_state.messages.append(AIMessage(content=response.content))
          # 旅行プランをPDFに保存
         travel_plan = response.content.splitlines()  # 旅行プランを行ごとに分ける
