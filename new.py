@@ -9,6 +9,7 @@ from langchain_community.tools import DuckDuckGoSearchRun
 from duckduckgo_search import DDGS
 import requests
 from bs4 import BeautifulSoup
+<<<<<<< HEAD
 from geopy.geocoders import Nominatim  
 from fpdf import FPDF
 
@@ -16,6 +17,10 @@ class PDF(FPDF):
     def header(self):
         self.set_font("Arial", 'B', 12)
         self.cell(0, 10, '旅行プラン', 0, 1, 'C')
+=======
+from geopy.geocoders import Nominatim 
+
+>>>>>>> 2c504d4d2d51f17db644bde35c691b9d601577dd
 
 def main():
     llm = ChatOpenAI(temperature=0)
@@ -104,6 +109,7 @@ def MAP():
                 st.error(f"An error occurred while fetching the location: {e}")
         else:
             st.warning("Please enter a location name.")
+    
 def web():
     # 商品名またはブランドを入力してくださいというフィールドを定義する
     user_input_web = st.text_input("国名または都市名を入力してください.入力することで、行きたい国について、少し知ることができます.詳しく知りたい場合は、下の、'Enter your question'に.")
@@ -231,6 +237,7 @@ def question(sentence):
         if isinstance(message, AIMessage):
             with st.chat_message('assistant'):
                 st.markdown(message.content)
+<<<<<<< HEAD
         elif isinstance(message, HumanMessage):
             with st.chat_message('user'):
                 st.markdown(message.content)
@@ -238,6 +245,13 @@ def question(sentence):
             st.write(f"System message: {message.content}")
     st.download_button(label="旅行プランをダウンロード",data=open(pdf_file_name, "rb").read(),file_name=pdf_file_name,mime="application/pdf")
 
+=======
+        #elif isinstance(message, HumanMessage):
+            #with st.chat_message('user'):
+                #st.markdown(message.content)
+        #else:  # isinstance(message, SystemMessage):
+            #st.write(f"System message: {message.content}")
+>>>>>>> 2c504d4d2d51f17db644bde35c691b9d601577dd
 #def question_web(sentence):
     # 旅行プランについて具体的な情報をDuckDuckGoで検索
     #detailed_query = f"{sentence} の旅行プラン, おすすめの旅行ルートや観光スケジュール"
@@ -254,7 +268,7 @@ def display_url_content(url):
         # URLからウェブページのコンテンツを取得する
         response = requests.get(url)
         response.raise_for_status()  # エラーがあれば例外を投げる
-        print(response)
+        #print(response)
         # HTMLを解析する
         soup = BeautifulSoup(response.content, 'html.parser')
 
