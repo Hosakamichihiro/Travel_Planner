@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from geopy.geocoders import Nominatim 
 from fpdf import FPDF
 
+
 class PDF(FPDF):
     def header(self):
         self.set_font("Arial", 'B', 12)
