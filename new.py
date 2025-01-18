@@ -1,5 +1,6 @@
 import streamlit as st
-from langchain_community.chat_models import ChatOpenAI
+import os
+from langchain_openai import ChatOpenAI
 from langchain.schema import (SystemMessage, HumanMessage, AIMessage)
 import pandas as pd
 from  streamlit_folium import st_folium
@@ -9,6 +10,12 @@ from duckduckgo_search import DDGS
 import requests
 from bs4 import BeautifulSoup
 from geopy.geocoders import Nominatim  
+from fpdf import FPDF
+
+class PDF(FPDF):
+    def header(self):
+        self.set_font("Arial", 'B', 12)
+        self.cell(0, 10, '旅行プラン', 0, 1, 'C')
 
 def main():
     llm = ChatOpenAI(temperature=0)
@@ -130,6 +137,24 @@ def AI():
         elif isinstance(message, HumanMessage):
             st.markdown(f"**You:** {message.content}")
 
+def create_pdf(travel_plan):
+    pdf = PDF()
+    pdf.add_page()
+
+    # 日本語フォントを追加
+    pdf.add_font("NotoSansJP", "", "fonts/NotoSansJP-VariableFont_wght.ttf", uni=True)
+    pdf.set_font("NotoSansJP", size=12)
+
+    # 旅行プランの内容をPDFに追加
+    for line in travel_plan:
+        pdf.cell(0, 10, txt=line, ln=True)
+
+    # PDFファイルを保存
+    pdf_file_name = "travel_plan_2.pdf"
+    pdf.output(pdf_file_name)
+    return pdf_file_name
+
+
 def condition():
     # 国を入力させるフィールドを追加
     # 国内か海外か選択
@@ -185,7 +210,7 @@ def condition_web():
 
 def question(sentence):
     user_input = sentence+"please response in japanese. 応答は必ず日本語で生成してください"
-    print(user_input)
+    #print(user_input)
     st.write("この条件で検索しています・・・")
     llm = ChatOpenAI(temperature=0)
     if user_input := sentence:
@@ -193,6 +218,13 @@ def question(sentence):
         with st.spinner("ChatGPT is typing ..."):
             response = llm(st.session_state.messages)
         st.session_state.messages.append(AIMessage(content=response.content))
+        # 旅行プランをPDFに保存
+        travel_plan = response.content.splitlines()  # 旅行プランを行ごとに分ける
+        if travel_plan:  # 内容があるか確認
+            pdf_file_name = create_pdf(travel_plan)
+            st.success(f"旅行プランがPDF形式で保存されました: {pdf_file_name}")
+        else:
+            st.error("旅行プランが生成されませんでした。")
 
     messages = st.session_state.get('messages', [])
     for message in messages:
@@ -204,6 +236,8 @@ def question(sentence):
                 st.markdown(message.content)
         else:  # isinstance(message, SystemMessage):
             st.write(f"System message: {message.content}")
+    st.download_button(label="旅行プランをダウンロード",data=open(pdf_file_name, "rb").read(),file_name=pdf_file_name,mime="application/pdf")
+
 #def question_web(sentence):
     # 旅行プランについて具体的な情報をDuckDuckGoで検索
     #detailed_query = f"{sentence} の旅行プラン, おすすめの旅行ルートや観光スケジュール"
