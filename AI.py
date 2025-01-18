@@ -193,7 +193,7 @@ def condition_web():
     if st.button("検索する"):
         # 入力された国を検索条件に追加
         sentence_duck = f"{destination_type}旅行を計画しています。行きたい場所は{region},滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。他のリクエストは「{other0}」です。最適な旅行プランを考えて下さい。応答は必ず日本語でお願いします。"
-        duckduckgo(sentence_duck)
+        #duckduckgo(sentence_duck)
 
 
 def question(sentence):
@@ -211,14 +211,14 @@ def question(sentence):
             st.markdown(f"**Assistant:** {message.content}")
         #elif isinstance(message, HumanMessage):
             #st.markdown(f"**You:** {message.content}")
-
+# URLの中身を取得してテキストを表示する関数
 def display_url_content(url):
     global sentence_duck
     try:
         # URLからウェブページのコンテンツを取得する
         response = requests.get(url)
         response.raise_for_status()  # エラーがあれば例外を投げる
-        print(response)
+        #print(response)
         # HTMLを解析する
         soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -293,6 +293,7 @@ def duckduckgo(sentence_duck):
     # 検索を実行する
     
     search_duckduckgo(sentence_duck)
+
 
 if __name__ == '__main__':
     main()
