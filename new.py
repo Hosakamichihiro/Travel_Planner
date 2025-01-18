@@ -10,6 +10,10 @@ from duckduckgo_search import DDGS
 import requests
 from bs4 import BeautifulSoup
 from geopy.geocoders import Nominatim  
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import io
+from fpdf import FPDF
 
 def main():
     llm = ChatOpenAI(temperature=0)
@@ -186,6 +190,38 @@ def condition_web():
         sentence_duck = f"{destination_type}旅行を計画しています。行きたい場所は{region},滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。他のリクエストは「{other0}」です。最適な旅行プランを考えて下さい。応答は必ず日本語でお願いします。"
         duckduckgo(sentence_duck)
 
+def generate_pdf():
+    """旅行プランをPDFとして生成する（日本語対応）"""
+    pdf = FPDF()
+    pdf.add_page()
+
+    # **日本語フォントの設定**
+    font_path = "fonts/NotoSansJP-VariableFont_wght.ttf"  # IPAexゴシックフォント（事前にダウンロードしておく）
+    if not os.path.exists(font_path):
+        raise FileNotFoundError("フォントファイルが見つかりません。NotoSansJP-VariableFont_wght.ttf を用意してください。")
+
+    pdf.add_font("fonts/NotoSansJP-VariableFont_wght.ttf", "", font_path, uni=True)  # 日本語フォントを登録
+    pdf.set_font("fonts/NotoSansJP-VariableFont_wght.ttf", size=12)  # フォントを適用
+
+    # **タイトル**
+    pdf.cell(200, 10, "旅行プラン", ln=True, align="C")
+    pdf.ln(10)  # 改行
+
+    # **AIが生成した旅行プランを取得**
+    messages = st.session_state.get("messages", [])
+    for message in messages:
+        if isinstance(message, AIMessage):
+            pdf.multi_cell(0, 10, message.content)  # PDFに文章を追加
+            pdf.ln(5)  # 改行
+
+        # **PDFをメモリ上に保存**
+    pdf_buffer = io.BytesIO()
+    pdf.output(pdf_buffer)  # メモリ上に出力（ファイルには出力しない）
+
+    # メモリからPDFデータを取得
+    pdf_data = pdf_buffer.getvalue()
+    
+    return pdf_data  # ここでPDFデータを返す
 def question(sentence):
     user_input = sentence+"please response in japanese. 応答は必ず日本語で生成してください"
     #print(user_input)
@@ -208,19 +244,14 @@ def question(sentence):
                 st.markdown(message.content)
         else:  # isinstance(message, SystemMessage):
             st.write(f"System message: {message.content}")   
-        #elif isinstance(message, HumanMessage):
-            #with st.chat_message('user'):
-                #st.markdown(message.content)
-        #else:  # isinstance(message, SystemMessage):
-            #st.write(f"System message: {message.content}")
-#def question_web(sentence):
-    # 旅行プランについて具体的な情報をDuckDuckGoで検索
-    #detailed_query = f"{sentence} の旅行プラン, おすすめの旅行ルートや観光スケジュール"
-    # DuckDuckGo検索を実行
-    #search = DuckDuckGoSearchRun()
-    #response = search.run({"query": detailed_query, "language": "jp"})
-    #st.write(response)
-
+   # **ダウンロードボタンを常に表示**
+    pdf_buffer = generate_pdf()
+    st.download_button(
+        label="📄 旅行プランをダウンロード",
+        data=pdf_buffer,
+        file_name="travel_plan_2.pdf",
+        mime="application/pdf",
+    )
 
 # URLの中身を取得してテキストを表示する関数
 def display_url_content(url):
