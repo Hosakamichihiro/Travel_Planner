@@ -26,7 +26,7 @@ st.set_page_config(
 )
 
 # Streamlitアプリの設定
-st.title("画像処理アプリ:テーマ")
+st.title("画像処理アプリ")
 st.subheader("画像をアップロードして処理を試してみてください。")
 
 # サイドバーで操作の種類を選択
