@@ -14,6 +14,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import io
 from fpdf import FPDF
+import fitz  # PyMuPDF ライブラリ
+#import warnings
 
 def main():
     llm = ChatOpenAI(temperature=0)
@@ -191,37 +193,55 @@ def condition_web():
         duckduckgo(sentence_duck)
 
 def generate_pdf():
-    """旅行プランをPDFとして生成する（日本語対応）"""
     pdf = FPDF()
     pdf.add_page()
-
-    # **日本語フォントの設定**
-    font_path = "fonts/NotoSansJP-VariableFont_wght.ttf"  # IPAexゴシックフォント（事前にダウンロードしておく）
-    if not os.path.exists(font_path):
-        raise FileNotFoundError("フォントファイルが見つかりません。NotoSansJP-VariableFont_wght.ttf を用意してください。")
-
-    pdf.add_font("fonts/NotoSansJP-VariableFont_wght.ttf", "", font_path, uni=True)  # 日本語フォントを登録
-    pdf.set_font("fonts/NotoSansJP-VariableFont_wght.ttf", size=12)  # フォントを適用
-
-    # **タイトル**
-    pdf.cell(200, 10, "旅行プラン", ln=True, align="C")
-    pdf.ln(10)  # 改行
-
-    # **AIが生成した旅行プランを取得**
-    messages = st.session_state.get("messages", [])
-    for message in messages:
-        if isinstance(message, AIMessage):
-            pdf.multi_cell(0, 10, message.content)  # PDFに文章を追加
-            pdf.ln(5)  # 改行
-
-        # **PDFをメモリ上に保存**
-    pdf_buffer = io.BytesIO()
-    pdf.output(pdf_buffer)  # メモリ上に出力（ファイルには出力しない）
-
-    # メモリからPDFデータを取得
-    pdf_data = pdf_buffer.getvalue()
+    font_path = os.path.abspath("C:/Users/保坂 陸太/OneDrive/デスクトップ/Travel_Planner/fonts/ipaexg.ttf")  # 実際のパスに変更
+    pdf.add_font("IPAexGothic", "", font_path, uni=True)
+    # フォントの設定（IPAexGothicなど）
     
-    return pdf_data  # ここでPDFデータを返す
+    pdf.set_font("IPAexGothic", "", size=12)
+
+    # コンテンツを追加（ここで旅行プランなどを挿入）
+    pdf.cell(200, 10, "旅行プラン内容をここに記載", ln=True, align="C")
+    #warnings.filterwarnings("ignore", category=UserWarning, module="fpdf.ttfonts")
+    # PDFデータをメモリ上のバッファに出力
+    pdf_buffer = io.BytesIO()
+    pdf.output(pdf_buffer, "S")
+    # バッファの位置を先頭に戻す
+    pdf_buffer.seek(0)
+
+    return pdf_buffer
+def check_pdf(pdf_path):
+    """生成した PDF の内容をチェックする"""
+    try:
+        doc = fitz.open(pdf_path)
+        print(f"✅ '{pdf_path}' を開きました。ページ数: {len(doc)}")
+        
+        # 各ページのテキストと画像を確認
+        for page_num, page in enumerate(doc):
+            text = page.get_text("text")  # テキスト抽出
+            image_list = page.get_images(full=True)  # 画像リスト取得
+            
+            print(f"\n📄 Page {page_num + 1}:")
+            print(f"📝 テキストの有無: {'あり' if text else 'なし'}")
+            print(f"🖼 画像の数: {len(image_list)}")
+            print("-" * 40)
+            
+            # テキストがあれば表示（最初の500文字）
+            if text:
+                print(text[:500])
+
+        doc.close()
+    
+    except Exception as e:
+        print(f"❌ PDF を開く際にエラーが発生しました: {e}")
+
+# PDF を生成
+pdf_path = generate_pdf()
+
+# **ここで PDF の内容をチェック**
+check_pdf(pdf_path)
+
 def question(sentence):
     user_input = sentence+"please response in japanese. 応答は必ず日本語で生成してください"
     #print(user_input)
@@ -249,7 +269,7 @@ def question(sentence):
     st.download_button(
         label="📄 旅行プランをダウンロード",
         data=pdf_buffer,
-        file_name="travel_plan_2.pdf",
+        file_name="travel_plan_5.pdf",
         mime="application/pdf",
     )
 
