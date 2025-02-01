@@ -212,33 +212,6 @@ def question(sentence):
         #elif isinstance(message, HumanMessage):
             #st.markdown(f"**You:** {message.content}")
 # URLの中身を取得してテキストを表示する関数
-def display_url_content(url):
-    global sentence_duck
-    try:
-        # URLからウェブページのコンテンツを取得する
-        response = requests.get(url)
-        response.raise_for_status()  # エラーがあれば例外を投げる
-        #print(response)
-        # HTMLを解析する
-        soup = BeautifulSoup(response.content, 'html.parser')
-
-        # ここでは例としてすべてのテキストを抽出していますが、
-        # より詳細な情報が必要であれば、HTMLの特定の部分を指定することもできます
-        text = soup.get_text()
-
-        # テキストを表示する
-        
-        sentence_duck_2 = f"{text}を踏まえて{sentence_duck}"
-        question(sentence_duck_2)  # このテキストをChatGPTに渡すことができます
-        
-    except requests.RequestException as e:
-        # HTTPリクエストでエラーが発生した場合の処理
-        st.write("エラーが発生しました。")
-        st.write(e)
-
-# 抽出したテキストをChatGPTに入力として使用するためには、
-# 関数を実装してChatGPT APIにリクエストを送信し、
-# 結果を取得して表示するロジックを追加する必要があります。
 
 def duckduckgo(sentence_duck):
     st.title("duckduckgo 検索結果")
@@ -255,7 +228,7 @@ def duckduckgo(sentence_duck):
             # タイトルとURLを表示する
             st.write(f"1: {title}")
             st.write(f"URL: {href}")
-            display_url_content(href)
+            #display_url_content(href)
             # 検索結果の二番目の項目のタイトルとURLを取得する
             second_result = results[1]
             title2 = second_result['title']
