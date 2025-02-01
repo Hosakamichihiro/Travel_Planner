@@ -6,8 +6,8 @@ from  streamlit_folium import st_folium
 import folium
 from langchain_community.tools import DuckDuckGoSearchRun
 from duckduckgo_search import DDGS
-import requests
-from bs4 import BeautifulSoup
+#import requests
+#from bs4 import BeautifulSoup
 from geopy.geocoders import Nominatim  
 
 
