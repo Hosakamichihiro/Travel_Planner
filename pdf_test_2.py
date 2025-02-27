@@ -18,6 +18,11 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 import io
 from reportlab.lib.utils import simpleSplit
+from fpdf import FPDF
+import fitz  # PyMuPDF ライブラリ
+import warnings
+import datetime
+
 
 
 def main():
@@ -155,6 +160,14 @@ def condition():
         # 海外の州（または国）を選択
         states = ["アジア", "アフリカ", "ヨーロッパ", "北アメリカ", "南アメリカ", "オセアニア"]  # 例としていくつかの国を追加
         region = st.radio("States I want to visit", states)# デフォルトを「日本」に設定
+    
+    min_date = datetime.date(2025, 1, 1)
+    max_date = datetime.date(2030, 12, 31)
+    date = st.date_input('出発日', datetime.date(2025, 1, 1), min_value=min_date, max_value=max_date)
+    
+    min_date = datetime.date(2025, 1, 1)
+    max_date = datetime.date(2030, 12, 31)
+    date2 = st.date_input('到着日', datetime.date(2025, 1, 1), min_value=min_date, max_value=max_date)
     days = st.slider('宿泊日数', 1, 14, 1)
     people = st.radio('人数', ['1人', '2人', '3人', '4人', 'それ以上'])
     traffic = st.radio('交通', ["飛行機", "船", "新幹線", "タクシー", "レンタカー", "自家用車"])
@@ -162,7 +175,7 @@ def condition():
 
     if st.button("検索する"):
         # 入力された国を検索条件に追加
-        sentence = f"{destination_type}旅行を計画しています。行きたい場所は{region},滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。"
+        sentence = f"{destination_type}旅行を計画しています。出発日は{date},到着日は{date2},行きたい場所は{region},滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。"
         question(sentence)
 
 def condition_web():
@@ -196,40 +209,57 @@ def condition_web():
         duckduckgo(sentence_duck)
 
 
-def save_text_as_pdf(text):
-    pdfmetrics.registerFont(TTFont("IPAexGothic", "ipaexg.ttf"))
+def generate_pdf():
+    warnings.filterwarnings("ignore", category=UserWarning, module="fpdf.ttfonts")
+    pdf = FPDF()
+    pdf.add_page()
+    font_path = os.path.abspath("C:/Users/保坂 陸太/OneDrive/デスクトップ/Travel_Planner/fonts/ipaexg.ttf")  # 実際のパスに変更
+    pdf.add_font("IPAexGothic", "", font_path)
+
+    pdf.set_font("IPAexGothic", "", size=12)
+
+    # コンテンツを追加（ここで旅行プランなどを挿入）
+    pdf.cell(200, 10, "旅行プラン内容をここに記載", align="C")
     
-    # **BytesIOを使用してメモリ上にPDFを保存**
+    # PDFをファイルとして保存
+    pdf_file_path = "旅行プラン.pdf"  # 保存するファイル名
+    pdf.output(pdf_file_path)  # ファイル名を指定して保存
+
+    # メモリ上のバッファを作成してPDFを返す
     pdf_buffer = io.BytesIO()
-    pdf = canvas.Canvas(pdf_buffer, pagesize=A4)
-    width, height = A4
-    pdf.setFont("IPAexGothic", 12, width - 100)
+    pdf.output(pdf_buffer,"S")  # バッファに出力
+    pdf_buffer.seek(0)  # バッファの位置を先頭に戻す
 
-    # テキストの描画開始位置
-    x, y = 50, height - 50  # 左上から描画を開始
-    line_height = 18  # 1行の高さ
-    
-    # 行ごとに分割して描画
-    lines = simpleSplit(text, "IPAexGothic", 12, width - 100)  # ページ幅に合わせて折り返し
-    for line in lines:
-        pdf.drawString(x, y, line)
-        y -= line_height  # 次の行へ移動
+    return pdf_file_path, pdf_buffer  # ファイルパスとバッファを返す
 
-        # ページの下部に到達したら新しいページを作成
-        if y < 50:
-            pdf.showPage()
-            pdf.setFont("IPAexGothic", 12)
-            y = height - 50
+def check_pdf(pdf_path):
+    """生成した PDF の内容をチェックする"""
+    try:
+        doc = fitz.open(pdf_path)
+        print(f"✅ '{pdf_path}' を開きました。ページ数: {len(doc)}")
 
+        # 各ページのテキストと画像を確認
+        for page_num, page in enumerate(doc):
+            text = page.get_text("text")  # テキスト抽出
+            image_list = page.get_images(full=True)  # 画像リスト取得
 
-    pdf.save()
-    pdf_buffer.seek(0)  # バッファの先頭に戻る
-    return pdf_buffer
+            print(f"\n📄 Page {page_num + 1}:")
+            print(f"📝 テキストの有無: {'あり' if text else 'なし'}")
+            print(f"🖼 画像の数: {len(image_list)}")
+            print("-" * 40)
 
+            # テキストがあれば表示（最初の500文字）
+            if text:
+                print(text[:500])
 
+        doc.close()
 
+    except Exception as e:
+        print(f"❌ PDF を開く際にエラーが発生しました: {e}")
 
-
+# PDFを生成して保存
+pdf_file_path, pdf_buffer = generate_pdf()
+check_pdf(pdf_file_path)
 
 def question(sentence):
     global AI_messages
@@ -250,24 +280,18 @@ def question(sentence):
             with st.chat_message('assistant'):
                 st.markdown(message.content)
                 AI_messages = message.content
-
-                # **PDFを生成**
-                pdf_file = save_text_as_pdf(AI_messages)
-
-                # **ダウンロードボタンを表示**
-                st.download_button(
-                    label="📄 旅行プランをPDFでダウンロード",
-                    data=pdf_file,
-                    file_name="travel_plan7.pdf",
-                    mime="application/pdf"
-                )
         elif isinstance(message, HumanMessage):
             with st.chat_message('user'):
                 st.markdown(message.content)
         else:  # isinstance(message, SystemMessage):
             st.write(f"System message: {message.content}")   
    # **ダウンロードボタンを常に表示**
-    
+    st.download_button(
+    label="📄 旅行プランをダウンロード",
+    data=pdf_buffer,
+    file_name="旅行プラン.pdf",  # ダウンロードするファイル名
+    mime="application/pdf",
+)
     
 
 # URLの中身を取得してテキストを表示する関数
