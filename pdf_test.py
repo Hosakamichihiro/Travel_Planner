@@ -16,6 +16,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
+from reportlab.lib.utils import simpleSplit
+import io
 
 
 def main():
@@ -194,58 +196,69 @@ def condition_web():
         duckduckgo(sentence_duck)
 
 
-def save_text_as_pdf(text, filename="travel_plan_3.pdf"):
-    global AI_messages
+def save_text_as_pdf(text):
+    """ メモリ上にPDFを保存し、自動折り返し対応 """
     pdfmetrics.registerFont(TTFont("IPAexGothic", "ipaexg.ttf"))
-    # PDFのページサイズを設定
-    pdf = canvas.Canvas(filename, pagesize=A4)
+
+    buffer = io.BytesIO()  # メモリ上のバッファ
+    pdf = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
     pdf.setFont("IPAexGothic", 12)
 
-    # テキストを描画
-    x, y = 50, height - 50  # 開始位置
-    for line in text.split("\n"):
-        pdf.drawString(x, y, line)
-        y -= 20  # 行間を設定（必要に応じて調整）
+    x, y = 50, height - 50  # 描画開始位置
+    line_height = 18  # 1行の高さ（フォントサイズ＋余白）
+    max_width = width - 100  # 余白を考慮したテキスト幅
 
-        # ページの下部に到達したら新しいページを作成
-        if y < 50:
-            pdf.showPage()
-            y = height - 50
+    # **行ごとに折り返して描画**
+    for line in text.split("\n"):
+        wrapped_lines = simpleSplit(line, "IPAexGothic", 12, max_width)  # 指定幅で自動折り返し
+        for wrapped_line in wrapped_lines:
+            pdf.drawString(x, y, wrapped_line)
+            y -= line_height  # 次の行へ移動
+
+            # **ページの下端に達したら改ページ**
+            if y < 50:
+                pdf.showPage()
+                pdf.setFont("IPAexGothic", 12)  # 新しいページでもフォントを設定
+                y = height - 50
 
     pdf.save()
-    print(f"PDFファイル {filename} を作成しました。")
-
-
-
+    buffer.seek(0)  # バッファの先頭に戻る
+    return buffer
 
 
 def question(sentence):
-    global AI_messages
-    user_input = sentence+"please response in japanese. 応答は必ず日本語で生成してください"
-    #print(user_input)
     st.write("この条件で検索しています・・・")
     llm = ChatOpenAI(temperature=0)
-    if user_input := sentence:
-        st.session_state.messages.append(HumanMessage(content=user_input))
-        with st.spinner("ChatGPT is typing ..."):
-            response = llm.invoke(st.session_state.messages)
-        st.session_state.messages.append(AIMessage(content=response.content))
-        
 
-    messages = st.session_state.get('messages', [])
+    user_input = sentence + " please response in Japanese. 応答は必ず日本語で生成してください"
+    st.session_state.messages.append(HumanMessage(content=user_input))
+
+    with st.spinner("ChatGPT is typing ..."):
+        response = llm.invoke(st.session_state.messages)
+
+    st.session_state.messages.append(AIMessage(content=response.content))
+    messages = st.session_state.get("messages", [])
+
+    pdf_data = None  # PDFデータを保存する変数
+
     for message in messages:
         if isinstance(message, AIMessage):
-            with st.chat_message('assistant'):
+            with st.chat_message("assistant"):
                 st.markdown(message.content)
-                AI_messages=(message.content)
-                save_text_as_pdf(AI_messages)
+                pdf_data = save_text_as_pdf(message.content)  # PDFデータを作成
         elif isinstance(message, HumanMessage):
-            with st.chat_message('user'):
+            with st.chat_message("user"):
                 st.markdown(message.content)
-        else:  # isinstance(message, SystemMessage):
-            st.write(f"System message: {message.content}")   
-   # **ダウンロードボタンを常に表示**
+
+    # **ダウンロードボタンを表示**
+    if pdf_data:
+        st.download_button(
+            label="📄 PDFをダウンロード",
+            data=pdf_data,
+            file_name="response.pdf",
+            mime="application/pdf",
+        )
     
     
 
