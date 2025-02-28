@@ -33,29 +33,31 @@ def main():
         page_icon="🧳"
     )
     st.header("Travel Planner")
-    st.text("・This site was developed to help you make the most of your vacation.")
-    st.text("・First, enter the conditions you are interested in,")
-    st.text("    such as your destination, gourmet food, tourist spots, etc.")
-    
+    st.text("・このサイトは、皆さんのバカンスを最高なものにするために開発されました。")
+    st.text("・まずは目的地.グルメ.観光地などの気になる条件から入力してみましょう！")
     # Sidebarの選択肢を定義する
-    options = ["START","WEB","MAP", "MEMO", "EXIT"]
+    options = ["⌂ HOME","Plan your travel", "AI_plus","TRAFFIC", "DESTINATION","MAP","EXIT"]
     choice = st.sidebar.selectbox("Select an option", options)
-
-    if choice == "START":
-        st.write("You selected START")
-        web()
-        AI()
-        condition()
-    elif choice == "WEB":
-        st.write("You selected WEB")
-        AI()
-        condition_web()
-    elif choice == "MAP":
+    # Mainコンテンツの表示を変える
+    if choice == "MAP":
         st.write("You selected MAP")
         MAP()
-    elif choice == "MEMO":
-        st.write("You selected MEMO")
+    elif choice == "⌂ HOME":
+        st.write("Home Screen")
+        HOME()
+    elif choice == "Plan your travel":
+        st.write("Strat planning your travel")
+        condition()
         AI()
+    elif choice == "AI_plus":
+        st.write("You selected AI_plus")
+        AI_plus()
+    elif choice == "TRAFFIC":
+        st.write("You selected WEB")
+        DUCK_airplane()
+    elif choice == "DESTINATION":
+        st.write("You selected DESTINATION")
+        DUCK_DESTINATION()
     else:
         st.write("You selected EXIT")
         redirect()
@@ -65,7 +67,7 @@ def redirect():
         <meta http-equiv="refresh" content="0; url=https://www.google.com">
         <p>Redirecting...</p>
     """, unsafe_allow_html=True)
-#35.68123360506802, 139.76695041934764
+
 def MAP():
     # セッション状態で地図データを管理
     if "map_data" not in st.session_state:
@@ -125,6 +127,40 @@ def web():
         response = search.run({"query": user_input_web, "language": "jp"})
         st.write(response)
 
+# CSSファイルを読み込む関数
+def load_css():
+    with open("styles.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+def HOME():
+    load_css()
+    # セッション状態の初期化
+    if "selected_button" not in st.session_state:
+        st.session_state.selected_button = None
+
+    # CSSを適用
+    load_css()
+
+    # 画像を表示
+    st.image("Oirasekeiryu.jpg", use_container_width=True)
+
+    # ボタンを横並びにする
+    cols = st.columns(6)  # 6つのボタン用のカラムを作成
+
+    # 各ボタンの処理
+    button_labels = ["AI", "AI_plus", "TRAFFIC", "DESTINATION", "MAP", "EXIT"]
+    functions = [lambda: (condition(), AI()), AI_plus, DUCK_airplane, DUCK_DESTINATION, MAP, redirect]
+
+    for i, label in enumerate(button_labels):
+        with cols[i]:
+            if st.button(label):
+                st.session_state.selected_button = i  # 押されたボタンの番号を記憶
+
+    # 記憶されたボタンの関数を実行
+    if st.session_state.selected_button is not None:
+        functions[st.session_state.selected_button]()
+
+
 def AI():
     llm = ChatOpenAI(temperature=0)
 
@@ -146,39 +182,70 @@ def AI():
         elif isinstance(message, HumanMessage):
             st.markdown(f"**You:** {message.content}")
 
+def AI_plus():
+    # ユーザーの入力を監視
+    llm = ChatOpenAI(temperature=0)
 
+    if "messages" not in st.session_state:
+        st.session_state.messages = [
+            SystemMessage(content="You are a travel planner. You should provide great travel plans.")
+        ]
+
+    if user_input := st.chat_input("聞きたいことを入力して下さい"):
+        st.session_state.messages.append(HumanMessage(content=user_input))
+        with st.spinner("ChatGPT is typing ..."):
+            response = llm(st.session_state.messages)
+        st.session_state.messages.append(AIMessage(content=response.content))
+
+    # チャット履歴の表示
+    messages = st.session_state.get('messages', [])
+    for message in messages:
+        if isinstance(message, AIMessage):
+            with st.chat_message('assistant'):
+                st.markdown(message.content)
+        elif isinstance(message, HumanMessage):
+            with st.chat_message('user'):
+                st.markdown(message.content)
+        else:  # isinstance(message, SystemMessage):
+            st.write(f"System message: {message.content}")
+    
 def condition():
-    # 国を入力させるフィールドを追加
-    # 国内か海外か選択
+    st.header("滞在条件の設定")
     destination_type = st.radio("国内旅行か海外旅行か選んでください", ['国内', '海外'])
 
     if destination_type == '国内':
-        # 国内の地方を選択
         todofuken = ["北海道", "東北地方", "関東地方", "中部地方", "近畿地方", "中国地方", "四国地方", "九州地方", "沖縄県"]
         region = st.radio("行きたい地方", todofuken)
     else:
-        # 海外の州（または国）を選択
         states = ["アジア", "アフリカ", "ヨーロッパ", "北アメリカ", "南アメリカ", "オセアニア"]  # 例としていくつかの国を追加
         region = st.radio("States I want to visit", states)# デフォルトを「日本」に設定
     
     min_date = datetime.date(2025, 1, 1)
     max_date = datetime.date(2030, 12, 31)
     date = st.date_input('出発日', datetime.date(2025, 1, 1), min_value=min_date, max_value=max_date)
-    
-    min_date = datetime.date(2025, 1, 1)
-    max_date = datetime.date(2030, 12, 31)
-    date2 = st.date_input('到着日', datetime.date(2025, 1, 1), min_value=min_date, max_value=max_date)
-    days = st.slider('宿泊日数', 1, 14, 1)
+    Departure_point = st.text_input('出発地を入力')
+    days = st.slider('滞在日数', 1, 14, 1)
+    time = st.time_input("出発時間を入力", value=None)
     people = st.radio('人数', ['1人', '2人', '3人', '4人', 'それ以上'])
     traffic = st.radio('交通', ["飛行機", "船", "新幹線", "タクシー", "レンタカー", "自家用車"])
-    cost = st.sidebar.number_input("予算（円）", min_value=1000, max_value=100000000, value=10000, step=1000)
-
+    cost = st.number_input("予算（円）", min_value=1000, max_value=100000000, value=100000, step=1000)
+    st.write(destination_type,"旅行を選択しています")
+    st.write("行きたい場所は、", region)
+    st.write("出発日は、",date)
+    st.write("出発地は、",Departure_point)
+    st.write("出発時間は、",time)
+    st.write("滞在日数は、",days)
+    st.write("人数は、",people)
+    st.write("交通手段は、",traffic)
+    st.write("予算は、",cost)
+    st.write("以上の条件で検索しますか。検索する場合は下のボタンを押してください。")
     if st.button("検索する"):
         # 入力された国を検索条件に追加
-        sentence = f"{destination_type}旅行を計画しています。出発日は{date},到着日は{date2},行きたい場所は{region},滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。"
+        sentence = f"{destination_type}旅行を計画しています。行きたい場所は{region},出発日は{date},出発地は{Departure_point},出発時間は{time},滞在日数は{days}日, 人数は{people}, 予算は{cost}円, 交通機関は{traffic}の旅行プランを計画してください。"
         question(sentence)
 
 def condition_web():
+    st.header("交通手段の検索")
     global sentence_duck
     # 国を入力させるフィールドを追加
     # 国内か海外か選択
@@ -323,6 +390,66 @@ def display_url_content(url):
 # 関数を実装してChatGPT APIにリクエストを送信し、
 # 結果を取得して表示するロジックを追加する必要があります。
 
+def DUCK_DESTINATION():
+    st.header("目的地の検索")
+    global people
+    people = st.radio(
+        '人数', 
+        ['1人', '2人', '3人',"4人","それ以上"]
+    )
+    cost = st.text_input("予算",placeholder="(単位も表記してください。)")
+    place = st.text_input("目的地",placeholder="沖縄県,フランス")
+    other1 = st.text_area("他にもリクエストがある場合はここに記入してください。特になければ、[なし]にチェックを入れてください。",placeholder="羽田空港発で、出来れば早朝の便は避けたいです。")
+    other2 = st.checkbox("なし")
+
+    if other1:
+        other0 = other1
+    else:
+        other0 = "なし"
+
+    st.write("人数：",people)
+    st.write("予算：",cost)
+    st.write("目的地：",place)
+    st.write("リクエスト：",other0)
+
+    global sentence_DUCK
+    sensence00 = place+" "+cost+" "+other0
+    sentence_DUCK = sensence00+" "+people+" おすすめ"
+    if st.button("検索する"):
+        duckduckgo()
+
+def DUCK_airplane():
+    st.header("交通手段の検索")
+    global date
+    min_date = datetime.date(2025, 2, 1)
+    max_date = datetime.date(2030, 12, 31)
+    date = st.date_input('出発日', datetime.date(2025, 2, 1), min_value=min_date, max_value=max_date)
+    global date2
+    min_date = datetime.date(2025, 2, 1)
+    max_date = datetime.date(2030, 12, 31)
+    date2 = st.date_input('到着日', datetime.date(2025, 2, 1), min_value=min_date, max_value=max_date)
+    global traffic
+    traffic = st.radio(
+        "交通",
+        ["飛行機","船","新幹線","タクシー","レンタカー","自家用車"]
+    )
+    global region
+    region = st.text_input("出発地",placeholder="成田空港")
+    global place
+    place = st.text_input("目的地",placeholder="沖縄県,フランス")
+
+    st.write("日程：",date,"~",date2)
+    st.write("交通手段：",traffic)
+    st.write("出発地：",region)
+    st.write("目的地：",place)
+
+    global sentence_DUCK
+    sentence0 = traffic+" "+region+"-"+place+"間"
+    sentence_DUCK = sentence0+" "+str(date)+"~"+str(date2)
+    if st.button("検索する"):
+        duckduckgo()
+
+
 def duckduckgo(sentence_duck):
     st.title("duckduckgo 検索結果")
 
@@ -376,6 +503,22 @@ def duckduckgo(sentence_duck):
     # 検索を実行する
     
     search_duckduckgo(sentence_duck)
+
+def MEMO():
+
+    # セッションステートにリストを初期化する
+    if 'my_list' not in st.session_state:
+        st.session_state.my_list = []
+
+    # ユーザーが入力した値を追加する
+    new_value = st.text_area('メモを入力してください。')
+
+    if st.button("追加"):
+        if new_value:
+            st.session_state.my_list.append(new_value)
+
+    # 現在のリストを表示
+    st.write('保存したメモ:', st.session_state.my_list)
 
 if __name__ == '__main__':
     main()
