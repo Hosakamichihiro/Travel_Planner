@@ -51,7 +51,7 @@ def main():
     # チャット履歴の初期化をする
     if "messages" not in st.session_state:
         st.session_state.messages = [
-            SystemMessage(content="You are a trip plannner.")
+            SystemMessage(content="You are a travel plannner.")
       ]
 
 
@@ -110,24 +110,31 @@ def load_css():
 
 def HOME():
     load_css()
-    st.image("Oirasekeiryu.jpg", use_column_width=True)
-    chooselist = [
-        st.button("AI"),st.button("AI_plus"),st.button("TRAFFIC"),
-        st.button("DESTINATION"),st.button("MAP"),st.button("EXIT")]
-    if chooselist[0]:
-        condition()
-        AI()
-    elif chooselist[1]:
-        AI_plus()
-    elif chooselist[2]:
-        DUCK_airplane()
-    elif chooselist[3]:
-        DUCK_DESTINATION()
-    elif chooselist[4]:
-        MAP()
-    elif chooselist[5]:
-        redirect()
+    # セッション状態の初期化
+    if "selected_button" not in st.session_state:
+        st.session_state.selected_button = None
 
+    # CSSを適用
+    load_css()
+
+    # 画像を表示
+    st.image("Oirasekeiryu.jpg", use_container_width=True)
+
+    # ボタンを横並びにする
+    cols = st.columns(6)  # 6つのボタン用のカラムを作成
+
+    # 各ボタンの処理
+    button_labels = ["AI", "AI_plus", "TRAFFIC", "DESTINATION", "MAP", "EXIT"]
+    functions = [lambda: (condition(), AI()), AI_plus, DUCK_airplane, DUCK_DESTINATION, MAP, redirect]
+
+    for i, label in enumerate(button_labels):
+        with cols[i]:
+            if st.button(label):
+                st.session_state.selected_button = i  # 押されたボタンの番号を記憶
+
+    # 記憶されたボタンの関数を実行
+    if st.session_state.selected_button is not None:
+        functions[st.session_state.selected_button]()
 
 
 def AI():
