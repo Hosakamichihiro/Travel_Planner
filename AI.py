@@ -276,58 +276,6 @@ def condition_web():
         duckduckgo(sentence_duck)
 
 
-def generate_pdf():
-    warnings.filterwarnings("ignore", category=UserWarning, module="fpdf.ttfonts")
-    pdf = FPDF()
-    pdf.add_page()
-    font_path = os.path.abspath("C:/Users/保坂 陸太/OneDrive/デスクトップ/Travel_Planner/fonts/ipaexg.ttf")  # 実際のパスに変更
-    pdf.add_font("IPAexGothic", "", font_path)
-
-    pdf.set_font("IPAexGothic", "", size=12)
-
-    # コンテンツを追加（ここで旅行プランなどを挿入）
-    pdf.cell(200, 10, "旅行プラン内容をここに記載", align="C")
-    
-    # PDFをファイルとして保存
-    pdf_file_path = "旅行プラン.pdf"  # 保存するファイル名
-    pdf.output(pdf_file_path)  # ファイル名を指定して保存
-
-    # メモリ上のバッファを作成してPDFを返す
-    pdf_buffer = io.BytesIO()
-    pdf.output(pdf_buffer,"S")  # バッファに出力
-    pdf_buffer.seek(0)  # バッファの位置を先頭に戻す
-
-    return pdf_file_path, pdf_buffer  # ファイルパスとバッファを返す
-
-def check_pdf(pdf_path):
-    """生成した PDF の内容をチェックする"""
-    try:
-        doc = fitz.open(pdf_path)
-        print(f"✅ '{pdf_path}' を開きました。ページ数: {len(doc)}")
-
-        # 各ページのテキストと画像を確認
-        for page_num, page in enumerate(doc):
-            text = page.get_text("text")  # テキスト抽出
-            image_list = page.get_images(full=True)  # 画像リスト取得
-
-            print(f"\n📄 Page {page_num + 1}:")
-            print(f"📝 テキストの有無: {'あり' if text else 'なし'}")
-            print(f"🖼 画像の数: {len(image_list)}")
-            print("-" * 40)
-
-            # テキストがあれば表示（最初の500文字）
-            if text:
-                print(text[:500])
-
-        doc.close()
-
-    except Exception as e:
-        print(f"❌ PDF を開く際にエラーが発生しました: {e}")
-
-# PDFを生成して保存
-pdf_file_path, pdf_buffer = generate_pdf()
-check_pdf(pdf_file_path)
-
 def question(sentence):
     global AI_messages
     user_input = sentence+"please response in japanese. 応答は必ず日本語で生成してください"
@@ -352,13 +300,7 @@ def question(sentence):
                 st.markdown(message.content)
         else:  # isinstance(message, SystemMessage):
             st.write(f"System message: {message.content}")   
-   # **ダウンロードボタンを常に表示**
-    st.download_button(
-    label="📄 旅行プランをダウンロード",
-    data=pdf_buffer,
-    file_name="旅行プラン.pdf",  # ダウンロードするファイル名
-    mime="application/pdf",
-)
+   
     
 
 # URLの中身を取得してテキストを表示する関数
