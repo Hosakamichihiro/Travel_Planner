@@ -19,7 +19,6 @@ from reportlab.pdfbase import pdfmetrics
 import io
 from reportlab.lib.utils import simpleSplit
 from fpdf import FPDF
-import fitz  # PyMuPDF ライブラリ
 import warnings
 import datetime
 
