@@ -392,11 +392,7 @@ def display_url_content(url):
 
 def DUCK_DESTINATION():
     st.header("目的地の検索")
-    global people
-    people = st.radio(
-        '人数', 
-        ['1人', '2人', '3人',"4人","それ以上"]
-    )
+    people = st.radio( '人数', ['1人', '2人', '3人',"4人","それ以上"])
     cost = st.text_input("予算",placeholder="(単位も表記してください。)")
     place = st.text_input("目的地",placeholder="沖縄県,フランス")
     other1 = st.text_area("他にもリクエストがある場合はここに記入してください。特になければ、[なし]にチェックを入れてください。",placeholder="羽田空港発で、出来れば早朝の便は避けたいです。")
@@ -412,42 +408,31 @@ def DUCK_DESTINATION():
     st.write("目的地：",place)
     st.write("リクエスト：",other0)
 
-    global sentence_DUCK
-    sensence00 = place+" "+cost+" "+other0
-    sentence_DUCK = sensence00+" "+people+" おすすめ"
     if st.button("検索する"):
-        duckduckgo()
+        sentence_destination = f"人数は{people},予算は{cost},目的地は{place},リクエストは{other0}です。最適な過ごし方を考えてください"
+        duckduckgo(sentence_destination)
+
 
 def DUCK_airplane():
     st.header("交通手段の検索")
-    global date
     min_date = datetime.date(2025, 2, 1)
     max_date = datetime.date(2030, 12, 31)
     date = st.date_input('出発日', datetime.date(2025, 2, 1), min_value=min_date, max_value=max_date)
-    global date2
     min_date = datetime.date(2025, 2, 1)
     max_date = datetime.date(2030, 12, 31)
     date2 = st.date_input('到着日', datetime.date(2025, 2, 1), min_value=min_date, max_value=max_date)
-    global traffic
-    traffic = st.radio(
-        "交通",
-        ["飛行機","船","新幹線","タクシー","レンタカー","自家用車"]
-    )
-    global region
+    traffic = st.radio( "交通", ["飛行機","船","新幹線","タクシー","レンタカー","自家用車"])  
     region = st.text_input("出発地",placeholder="成田空港")
-    global place
     place = st.text_input("目的地",placeholder="沖縄県,フランス")
 
     st.write("日程：",date,"~",date2)
     st.write("交通手段：",traffic)
     st.write("出発地：",region)
     st.write("目的地：",place)
-
-    global sentence_DUCK
-    sentence0 = traffic+" "+region+"-"+place+"間"
-    sentence_DUCK = sentence0+" "+str(date)+"~"+str(date2)
+   
     if st.button("検索する"):
-        duckduckgo()
+        sentence_traffic = f"出発日は{date},到着日は{date2},交通手段は{traffic},出発地は{region},目的地は{place}です。最適な行き方を考えてください"
+        duckduckgo(sentence_traffic)
 
 
 def duckduckgo(sentence_duck):
@@ -465,7 +450,7 @@ def duckduckgo(sentence_duck):
             # タイトルとURLを表示する
             st.write(f"1: {title}")
             st.write(f"URL: {href}")
-            display_url_content(href)
+            #display_url_content(href)
             # 検索結果の二番目の項目のタイトルとURLを取得する
             second_result = results[1]
             title2 = second_result['title']
