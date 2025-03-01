@@ -141,7 +141,7 @@ def HOME():
     load_css()
 
     # 画像を表示
-    st.image("Oirasekeiryu.jpg", use_container_width=True)
+    #st.image("Oirasekeiryu.jpg", use_container_width=True)
 
     # ボタンを横並びにする
     cols = st.columns(6)  # 6つのボタン用のカラムを作成
