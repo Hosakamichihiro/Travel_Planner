@@ -14,8 +14,15 @@ from fpdf import FPDF
 
 class PDF(FPDF):
     def header(self):
-        self.set_font("Arial", 'B', 12)
+        self.add_font("NotoSansJP", "", "fonts/NotoSansJP-VariableFont_wght.ttf", uni=True)
+        
+        self.set_font("NotoSansJP", "", 12)
         self.cell(0, 10, '旅行プラン', 0, 1, 'C')
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font("NotoSansJP", "", 8)
+        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
 
 def main():
@@ -145,6 +152,7 @@ def create_pdf(travel_plan):
 
     # 日本語フォントを追加
     pdf.add_font("NotoSansJP", "", "fonts/NotoSansJP-VariableFont_wght.ttf", uni=True)
+    #pdf.add_font("NotoSansJP", "B", "fonts/NotoSansJP-Bold.ttf", uni=True) 
     pdf.set_font("NotoSansJP", size=12)
 
     # 旅行プランの内容をPDFに追加
@@ -152,7 +160,7 @@ def create_pdf(travel_plan):
         pdf.cell(0, 10, txt=line, ln=True)
 
     # PDFファイルを保存
-    pdf_file_name = "travel_plan_2.pdf"
+    pdf_file_name = "travelplan_test.pdf"
     pdf.output(pdf_file_name)
     return pdf_file_name
 
