@@ -18,7 +18,6 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 import io
 from reportlab.lib.utils import simpleSplit
-from fpdf import FPDF
 import warnings
 import datetime
 
@@ -31,7 +30,7 @@ def main():
         page_title="Travel Planner",
         page_icon="🧳"
     )
-    st.header("Travel Planner")
+    st.title("Travel Planner")
     st.text("・このサイトは、皆さんのバカンスを最高なものにするために開発されました。")
     st.text("・まずは目的地.グルメ.観光地などの気になる条件から入力してみましょう！")
     # Sidebarの選択肢を定義する
@@ -187,7 +186,7 @@ def AI_plus():
 
     if "messages" not in st.session_state:
         st.session_state.messages = [
-            SystemMessage(content="You are a travel planner. You should provide great travel plans.")
+            SystemMessage(content="You are a chatbot.")
         ]
 
     if user_input := st.chat_input("聞きたいことを入力して下さい"):
